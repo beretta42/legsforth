@@ -5,7 +5,7 @@ all: legs16 forth.img
 	cd ../bfc ; make
 
 forth.img: ../include/forth.fs ../include/forth2.fs ../bfc/bfc
-	../bfc/bfc -d 4000 -o forth.img ../include/forth.fs
+	../bfc/bfc -d 4000 -o forth.img start.fs
 	cat ../include/forth2.fs | ./legs16 -sqi forth.img 
 
 legs16: legs16.c

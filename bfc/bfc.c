@@ -618,11 +618,9 @@ void setorg(){
 // impliments the "done" immediate word:
 // closes the current input source and pops input stack
 void done(){
-  fprintf( stderr, "%s", in_stack[ip].inname );
   immonly();
   fclose( in_stack[ip].in  );
   in_stack[ip].in=NULL;
-  fprintf( stderr, "%s", in_stack[ip].inname );
   ip--;
 }
 
@@ -634,7 +632,6 @@ void done(){
 void include(){
   immonly();
   word(); // get a word from current input (the filename)
-  fprintf( stderr, "%s\n", wordb );
   // check to see if this word exists
   if( find( wordb ) ) return;
   // word does not exist then make it exist and include

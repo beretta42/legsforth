@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #define CELL 2            // width of cell in bytes
 #define MEMZ 0x80000      // Memory Store size
@@ -68,6 +69,10 @@ int beck_flag=0;            // a flag if the the buffer is ready
 volatile int timer=0;       // the timer interrupt flag
 int ienable=0;              // timer interrupt enable flag
 
+char defImage[]="/.legs/forth.img" ;
+
+char inImgFile[1024];
+char outImgFile[1024];
 
 // print state of machine
 void pstate( ){
@@ -180,7 +185,7 @@ void save( ){
   mcstore( ienable, tp+6 );
   mstore( tp, TP0 );
   // save the memory store
-  f=fopen("forth.img","w");
+  f=fopen(outImgFile,"w");
   if( !f ){
     fprintf(stderr," Error saving memory image.\n" );
     exit( -1);
@@ -254,7 +259,7 @@ void pull(){
 }
 
 
-void dup(){
+void fdup(){
   cell t=mpop();
   mpush(t);
   mpush(t);
@@ -268,7 +273,7 @@ void swap(){
 
 void over(){
   push();
-  dup();
+  fdup();
   pull();
   swap();
 }
@@ -547,9 +552,9 @@ void init(){
   // clear memory store
   for( x=0; x<MEMZ; x++) m[x]=0;
   // load the memory store
-  f=fopen("forth.img","r");
+  f=fopen(inImgFile,"r");
   if( !f ){
-    fprintf(stderr,"Fatal error loading memory image.\n" );
+    fprintf(stderr,"Fatal error loading memory image: %s\n", defImage );
     quit(-1);
   }
   fread( m, 1, MEMZ, f );
@@ -561,7 +566,7 @@ void init(){
   p[1]=push;        // 1
   p[2]=pull;
   p[3]=drop;
-  p[4]=dup;
+  p[4]=fdup;
   p[5]=swap;
   p[6]=over;
   p[7]=bra;
@@ -613,6 +618,9 @@ void init(){
   rp=mfetch( tp+2 );   // load RP
   sp=mfetch( tp+4 );   // load RP
   ienable=mcfetch( tp+6 ); // load EX
+  // if the reset vector is not clear then do it
+  // instead of tp's ip!
+  if( mfetch( RVECT ) ) ip=mfetch( RVECT );
   }
 }
 
@@ -710,28 +718,34 @@ void loop(){
 
 
 int main( int argc, char *argv[] ){
-  int x,i;
-  for( x=1; x<argc; x++ ){
-    if( argv[x][0]=='-' ){
-      for( i=1; i<strlen(argv[x]); i++ ){
-	switch( argv[x][i] ){
-	case 's':
-	  savek=1;
-	  break;
-	case 'c':
-	  cpsave=1;
-	  break;
-	case 'q':
-	  noemit=1;
-	  break;
-	case 'd':
-	  sdebug=1;
-	  break;
-	default:
-	  fprintf(stderr, "Error: bad command line switch.\n" );
-	  exit(-1);
-	}
-      }
+  int s;
+
+  strncat( inImgFile, getenv( "HOME" ), 512 );
+  strncat( inImgFile, defImage, 1024 );
+  strncat( outImgFile, getenv( "HOME" ), 512 );
+  strncat( outImgFile, defImage, 1024 );
+
+  
+  while ( (s=getopt( argc, argv, "scqdi:" ))>=0  ){
+    switch( s ){
+    case 'i':
+      strncpy ( inImgFile, optarg, 1024 );
+      strncpy ( outImgFile, optarg, 1024 );
+    case 's':
+      savek=1;
+      break;
+    case 'c':
+      cpsave=1;
+      break;
+    case 'q':
+      noemit=1;
+      break;
+    case 'd':
+      sdebug=1;
+      break;
+    default:
+      fprintf(stderr, "Error: bad command line switch.\n" );
+      exit(-1);
     }
   }
   init();

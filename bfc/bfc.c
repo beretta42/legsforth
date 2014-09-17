@@ -619,6 +619,7 @@ void setorg(){
 // closes the current input source and pops input stack
 void done(){
   immonly();
+  if( ! ip ) return ; 
   fclose( in_stack[ip].in  );
   in_stack[ip].in=NULL;
   ip--;

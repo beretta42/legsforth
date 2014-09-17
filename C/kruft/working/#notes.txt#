@@ -1,0 +1,194 @@
+TODOS:
+
+* static-ize the primitive function table
+* process more of the command line
+* bounds check sp,rp,ip and memory addressing
+* variable VM memory size
+* sync opcodes with spec
+* no echo terminal
+* convert \r's to \n
+
+
+************************************
+Global Variables
+************************************
+
+MACHINE GLOBALS:
+rp	     - return pointer
+sp           - stack pointer
+rvect        - reset vector
+ivect        - interrupt vector
+
+FORTH INTERPRETER GLOBALS:
+c0           - initial code pointer
+dh           - initial dictionary head
+dp	     - dictionary pointer
+cp           - code pointer
+dh           - dictionary head pointer
+state        - compiler state
+
+lp	     - local name pointer
+localarea    - local name compile base pointer
+
+RUN-TIME GLOBALS:
+runners      - head of running tasks list
+
+
+* registers and global values are essentially the same thing
+
+
+areas:
+
+ user  - user spaced tasks
+   dp - compile to dp
+   cp - compile to cp
+ system - system tasks
+   dp - compile to *cp*
+   cp - compile to cp
+
+"header'" and "header2" are xt's
+that compile new headers to either the cp, "header'"
+or the cp, "header2".	
+  
+coming from system mode to user mode merge
+dictionaries togeter
+
+
+
+
+
+
+
+***********************************************
+Kernel
+***********************************************
+Kernel is a micro kernel
+
+Each task has a 1 byte receive buffer.  Bytes
+are syncronously sent from client tasks to
+server tasks.  The server returns a byte in
+reply.  Atop this simplicity, the kernel can handle the
+passing of kernel objects (threads, or data )
+back and forth between tasks.  send and reply formats:
+
+1. send a char, recv a char  - slow as crap!
+2. send a kobj, recv a char  - medium
+3. send a kobj, recv a kobj  - heavy-duty data slug-fest smack-down
+
+only number 1 is atomic.
+
+selective message reception
+   Add OID, Object ID field in task? ( so task knows it's OID )
+   ADD SID, Sender's OID
+   ADD SIF, Sender's OID to filter
+   Make task's object table smaller?
+   
+All of the above can timeout.
+
+
+
+
+*****************************
+TODO's
+*****************************
+
+Make messages work with new sleeping system
+How to Timeout kernel calls. (which calls can time out? all?)
+exceptions: default handler?
+exceptions: use pointer-pointer so task can have different sub-handlers
+shell: move shell out to block boundary. ( "cp!" directive to bfc? )
+memory: task growing memory? howto?
+texit: task 1 does exit correctly: parent dereferences incorrect!
+simpify.
+kernel.fs: map: make work with removing elements
+
+
+
+******************************
+BUG's
+******************************
+- Random locking of system!!!! caused my waking sleepers?
+
+*************************************
+LOG
+*************************************
+
+
+
+
+
+interrupt timer be used 
+    to flag status for task to poll for?
+or  to force an action, like "throw", into task's stream?
+
+task poll for zero timer? -
+
+    all yield loops will have to poll for timeout
+
+user poll for zero timer?
+
+
+
+
+
+For catch an throw, the saved state frame is as follow:
+?: catch ( xt -- e )   \ catch a thrown error
+?: throw ( e -- e )    \ Returns in saved context
+
+Interface Functions
+
+: texit   ( u -- )       \ quit a thead, return u to parent
+: waitfor ( k -- u )     \ wait for task u to die, returns u with exit status
+: wait    ( -- k )       \ wait for any child task to die
+: stop    ( k -- )       \ stop a task from running
+: start   ( k -- )       \ wake a task
+: malloc  ( -- b )       \ Kern iface: allocate block memory
+: mfree   ( b -- )       \ Kern iface: free memory
+: alloc   ( -- k )       \ Kern iface: allocate kernel object
+: deref   ( k -- a )     \ de-references a kernel reference
+: attach  ( o -- k )     \ attached obj o to task's kernel references
+: close   ( k -- )       \ Kern iface: close kernel object
+: spawn   ( s0 xt -- k ) \ Kern iface: create thread
+: yield   ( -- )         \ yield to the kernel
+: sleep   ( u -- )       \ Kern iface: sleep for u ticks
+: sendc   ( c k -- c )   \ connect to task k sending c, and getting c as reply
+: recvc   ( --  c )      \ receive char from a client
+: replyc  ( c -- )       \ send reply char back to client
+: kinit   ( xt -- )      \ inits system
+Kernel extension words. Rules:
+: recvmsg ( -- m ) \ recv a message
+: replymsg ( m -- ) \ reply with message
+: sendmsgc ( m t -- c ) \ send a message, get char as reply
+: sendstrc ( ca kid -- c ) \ send a string, get char as reply *WATCHING*
+: sendcmsg ( c t -- m ) \ send c to task t, get m as reply
+: sendmsg ( m t -- m ) \ send a message, get message as reply
+: spallot ( -- a )
+: thread ( xt -- u ) \ creates new task in interpreter
+
+
+
+
+Breaking Kernel functions down in source code.
+   primitive zone .... generic, mostly stack based words
+   internal kernel ... interrupts stay off
+   interface zone .... interrupts are changed
+   public libs ....... interrupts stay on.
+
+
+The interface zone is the only place where interrupts are turned on or
+off.  There's some interface zone words, like "alloc" and "close",
+that look redundant.  They ensure the interrupts are turned off when
+executing kernel.  A syscall type interface could do this too. 
+
+internal : int are off, stay off.  
+interface zone: int are on, turn them off, don't call other iface zone words.  
+public libs: int are on, stay on.
+
+
+all IPC messages are sent via three primitives:
+
+sendc ( c k -- c ) \ send c to thread k, returns c from other thread
+recvc ( -- c )     \ server: receive c from any thread
+replyc ( c -- )    \ server: send reply c back to client thread
+
+On top of this can be constructed ever more elaborate means of IPC.

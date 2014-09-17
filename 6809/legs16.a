@@ -1,0 +1,422 @@
+;;;
+;;;  Legs16 VM for 6809
+;;;     - Flat memory model
+;;;     - no stack checking
+;;;  	- no opcode security
+;;;   	- no stack or memory bounds checking	
+
+
+	include	"task.d"
+
+	
+; MB	 equ   0x3000		; base address of memory store
+                        	; MB must be set to a page boundary
+; MEMZ	 equ   0x4000		; 16 k worth of virtual memory
+
+
+
+MB	import			; Base cpu address of VM's memory
+MEMZ	import			; size of VM's memory in bytes
+
+	
+;;; Registers:
+;;;    D  - scratch pad
+;;;    X  - IP
+;;;    Y  - scratch pad
+;;;    U  - SP 
+;;;    S  - RP 
+;;;
+;;; X,U,S hold an adjusted memory value - the values
+;;; are adjusted with the offset to the base of the
+;;; VM's memory store.
+;;; 
+
+
+
+	section	code
+
+;;; Register a extension Primitive
+;;; entry: X is address of routine
+;;; exit:  none
+;;; mods:  all
+	export	rprim	
+rprim
+	pshs	b		; save op code
+	lslb			; convert op code into byte offset
+        ldy	#table		; y is base of table
+  	stx	d,y		; store address in table
+	puls	b,pc		; restore return
+
+;;; Append table of primitives
+;;;   takes: X is address to table, D is the table length in bytes
+;;;   returns: nothing
+;;;   THIS IS UNTESTED!!!
+	export 	rptab
+rptab
+	pshs	d,x,y,u		; save regs
+	tfr	x,u		; u is source
+	tfr	d,y		; y is size
+	ldx	#etable		; x is dest
+	jsr	mv		; mv / cp memory
+	puls	d,x,y,u,pc	; restore return
+	
+
+;;; This routine inits the Forth VM
+;;; and starts the inner-interpreter
+;;; entry: none
+;;; exit:  doesn't
+	export 	goforth
+goforth
+	;; we should clr the VM's memory....
+	lds	#MEMZ+MB	; setup return pointer
+	ldx	MB		; setup IP tp point to VM's reset vector
+	leax	MB,x		; add memory store base to x
+	ldu	#MEMZ+MB-0x80	; setup SP to point to end of memory store
+	jmp	next		; and jump to inner loop
+
+
+;;;  These are "private" routines, they are the 
+;;;  legs forth engine's primatives, and are 
+;;;  held in a array
+	
+push
+	pulu	d		
+	pshs	d
+	bra	next
+
+pull
+	puls	d		
+	pshu	d
+	bra	next
+
+drop				
+	leau	2,u
+	bra	next
+
+dup				
+	ldd	,u
+	pshu	d
+	bra	next
+
+swap
+	pulu	d
+	pulu	y
+	pshu	d
+	pshu	y
+	bra	next
+
+over
+	ldd	2,u
+	pshu	d
+	bra	next
+
+bra
+	ldx	,x
+	leax	MB,x
+	bra	next
+
+zbra
+	ldd	,u++
+	beq	bra
+	leax	2,x
+	bra	next
+
+dofor
+	ldd	,s++
+	beq	bra
+	addd	#-1
+	pshs	d
+	leax	2,x
+	bra	next
+
+exit
+	puls	x
+	leax	MB,x
+	bra	next
+
+mint
+	ldd	#0x8000
+	pshu	d
+	bra	next
+
+and
+	pulu	d
+	anda	,u
+	andb	1,u
+	std	,u
+	bra	next
+
+or
+	pulu	d
+	ora	,u
+	orb	1,u
+	std	,u
+	bra	next
+
+xor
+	pulu	d
+	eora	,u
+	eorb	1,u
+	std	,u
+	bra	next
+
+com
+	pulu	d
+	coma
+	comb
+	pshu	d
+	bra	next
+
+plus
+	pulu	d
+	addd	,u
+	std	,u
+;	bra	next		; fall-through to next
+
+next
+*	tst	iflag		; is there an interrupt pending?
+*	beq	next0		; nope 
+*	clr	iflag		; reset flag
+*	ldd	MB+2		; load d with interrupt vector
+*	bra	next1		; go processes vector
+next0	ldd	,x++		; load next op code and inc IP
+next1	tsta                    ; is a primitive?
+	beq	next2		; yes then go processes
+	leax	-MB,x		; no then change IP to virtual address
+	pshs	x		; push virtual address onto RP
+	adda	#MB/256		; convert op code to real address
+	tfr	d,x		; store in IP
+	bra	next		; rinse and repeat
+next2
+	lslb			; convert op code into byte offset
+	tfr	d,y		; fetch op code address from table
+	jmp	[table,y]	; go do primitive
+	
+shl
+	pulu	d
+	lslb
+	rola
+	pshu	d
+	bra	next
+
+shr
+	pulu	d
+	lsra
+	rorb
+	pshu	d
+	bra	next
+
+oneplus
+	pulu	d
+	addd	#1
+	pshu	d
+	bra	next
+
+oneminus
+	pulu	d
+	addd	#-1
+	pshu	d
+	bra	next
+	
+spat
+	leay	-MB,u
+	pshu	y
+	bra	next
+
+spbang
+	pulu	d
+	adda	#MB/256
+	tfr	d,u
+	bra	next
+
+rpat
+	leay	-MB,s
+	pshu	y
+	bra	next
+
+rpbang
+	pulu	d
+	adda	#MB/256
+	tfr	d,s
+	bra	next
+
+exec
+	pulu	d
+	bra	next1
+
+at
+	pulu	y
+	ldd	MB,y
+	pshu	d
+	bra	next
+
+bang
+	pulu	y
+	pulu	d
+	std	MB,y
+	bra	next
+
+cat
+	pulu	y
+	clra
+	ldb	MB,y
+	pshu	d
+	jmp	next
+
+cbang
+	pulu	y
+	pulu	d
+	stb	MB,y
+	jmp	next
+
+cell
+	ldd	#2
+	pshu	d
+	jmp	next
+
+char
+	ldd	#1
+	pshu	d
+	jmp	next
+
+lit
+	ldd	,x++
+	pshu	d
+	jmp	next
+
+key
+	jsr	getstd
+	clra
+ 	pshu 	d
+	jmp	next
+
+emit
+ 	pulu 	d
+	jsr	putstd	
+	jmp 	next
+
+bye
+	jmp	[0xfffe]
+
+memz
+	ldd	#MEMZ
+	pshu	d
+	jmp	next
+
+pat
+	clra
+	ldb	[,u]
+	std	,u
+	jmp 	next
+
+pbang
+	pulu	y
+	pulu	d
+	stb	,y
+	jmp	next
+
+
+ion
+*	lda	#0xff
+*	sta	imask		; handle interrupts
+	jmp	next
+
+	
+ioff
+*	clr	imask		; don't handle interrupts
+	jmp	next
+
+;;;
+;;; These are legs16 extension words
+;;; 
+
+	
+syield				; ( -- )
+	jsr	yield
+	jmp	next		
+
+ssleep				; ( c -- ) c is unsigned no of ticks
+	pulu	d		; D is ticks
+	jsr	sleep		; sleep
+	jmp	next
+
+sspawn				; ( -- f ) f is -1 for parent, 0 for child
+	pshs	x		; save regs
+	ldd	#TSIZE		; size of task struct
+	jsr	sbrk		; alloc new struct
+	jsr 	clr		; clear
+	jsr	spawn		; spawn
+	bcs	parent@		; setup return for parent task
+	ldd	#0		; push 0 onto stack
+	bra	out@		; leave
+parent@ ldd	#-1		; push -1 onto stack
+out@	pshu	d		; push return onto stack
+	puls	x,pc		; restore, return
+
+	;; real interrupt handler
+* int
+*	lda	0xff02	   	; reset pia
+*	tst	imask		; are we handling interrupt?
+*	beq	int1		; no then return
+*	lda	#0xff		; 
+*	sta	iflag		; set flag for syncronizing with main loop
+*int1	rti
+*
+*imask	.db	0		; interrupt handler mask
+*iflag	.db	0		; marked true by interrupt handler
+	
+
+
+
+;;; This table holds the addresses of
+;;; the Legs Forth VM
+table
+	.dw	bye		; This is the exception vector
+	.dw	push
+	.dw	pull
+	.dw	drop
+	.dw	dup
+	.dw	swap		; 5
+	.dw	over
+	.dw	bra
+	.dw	zbra
+	.dw	dofor
+	.dw	exit		; 10
+	.dw	mint
+	.dw	and
+	.dw	or
+	.dw	xor
+	.dw	com		; 15
+	.dw	plus
+	.dw	shl
+	.dw	shr
+	.dw	oneplus
+	.dw	oneminus	; 20
+	.dw	spat
+	.dw	spbang
+	.dw	rpat
+	.dw	rpbang
+	.dw	exec		; 25
+	.dw	at
+	.dw	bang
+	.dw	cat
+	.dw	cbang
+	.dw	cell		; 30
+	.dw	char
+	.dw	lit
+	.dw	key
+	.dw	emit
+	.dw	bye		; 35
+	.dw	memz
+	.dw	pat		; 37
+	.dw	pbang		; 38
+	.dw	ion		; 39
+	.dw	ioff		; 40
+	.dw	syield		; 41
+	.dw	ssleep		; 42
+etable
+	IFDEF RAW
+	zmb	table+256-.
+	ELSE
+	rmb	table+256-.
+	ENDC

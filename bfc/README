@@ -1,0 +1,114 @@
+Beretta's Legs Forth Cross-Compiler
+
+This is a simple cross-compiler designed to solve the
+chicken-in-the-egg problem of writing a new forth.  Forth is best
+written in forth - but we have no native forth code (yet).  This
+compiler is NOT forth, however, as it lacks the ability to define,
+redefine, extend, override immediate words, and it has no immediate
+mode.  This sounds restrictive, but it does offer a few advantages
+as the compiler is always in "compile" mode, new dictionary entries
+can be made anywhere, even "inside" other definitions.  Technically,
+there is no "inside".  The ":" does not change any compiler state - it
+just takes the next token and makes it a word.  Immediate word have
+been kept to a bare minimum ("(" comments exluded ) to avoid naming
+conflict with the target's words.
+
+There ARE immediate words however:
+
+
+:     	  create a new word definition using next token as the name.
+\     	  line comment - parse input as comment until EOL is reached.
+(     	  parse input as comment until ")" is reached.
+immediate marks latest definition as immediate
+hidden	  marks latest definition as hidden
+if    	  \
+then	  |
+else      |
+begin	  |
+again	  | - the usual forth meanings
+until	  |
+while	  |
+repeat	  |	
+for	  |
+next	  /
+mkp	  manually define new word - see below
+include   push a new input source file onto input stack
+done      close input source, pop the input source stack
+
+	
+All but "for/next" are Forth standards, and "for/next" is not unknown
+in the forth world - its simple and way faster then "do/loop" and
+implimented in the Legs VM natively (see dofor primitive)
+
+Upon a successfully compile, the compiler will fill in the VM's reset
+vector with the LATEST DEFINED WORD's execution token (XT).  Most
+forth source has the highest level word defined last so the author
+sees no problem with this default behavior.  Variable addresses, defined
+by the Legs Standard, as c0 (saved compiler pointer) and dh
+(dictionary head) are filled in appropriately.
+
+The "mkp" word is used to define new primitives that certain VMs will
+support. All required primitives are pre-defined by the compiler
+according to the Legs VM specifications.  "mkp"'s format is a bit
+different than most normal (and good) forth:
+
+mkp ff dosomething
+
+This will make a new word in the dictionary named "dosomething" and
+give it a xt value of 0xff.
+
+
+************************************
+Numbers
+************************************
+All numbers seen by the compiler will be treated as hexidecimal.  All
+numbers (except as consumed from the source by "mkp") will be directly
+compiled into the VM's memory store.
+
+
+************************************
+Command Line Options
+************************************
+
+standard usage:   bfc [options] <source file>
+
+-o <file>   use <file> for image output, default: "a.out"
+-d          do not compile dictionary
+-t	    truncate output image to CP
+-a <addr>   use devirtualized memory store addresses - use <addr> as base (address is in hex)	    
+-h 	    print help 
+-v	    print version number 
+-m <size>   use create memory store of <size> bytes, default: 16384 bytes
+
+
+
+************************************
+Dictionary Format
+************************************
+If the dictionary is built in the target (which is default behavior)
+the dictionary will be in this format:
+
+Mega Format:
+
+name   offset    size in bytes    use   
+link   0         2    	 	  link to next dictionary structure
+xt     2	 2		  address or token of word's code
+flags  4	 2		  word's flags
+size   6	 2		  size of word's name
+name   8	 variable	  word's name in 8 bit clear text
+
+min size:	 9 bytes
+
+
+
+Micro format:
+
+name   offset    size in bytes    use   
+link   0         2    	 	  link to next dictionary structure
+xt     2	 1		  address or token of word's code
+flags  3	 1		  word's flags
+name   4	 variable	  name with last charactor bit 7 set
+       		 		    with max of 3 charactors
+code   5-7       variable 	  body of the code
+
+min size:	 5 bytes

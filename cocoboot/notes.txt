@@ -1,0 +1,373 @@
+------------------------------------------------------------------------
+CoCoBoot - A Modern way to boot your Tandy Color Computer
+Copyright(C) 2013 Brett M. Gordon beretta42@gmail.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+------------------------------------------------------------------------
+
+
+How to Boot a CoCo:
+
+Loading CoCoBoot from:
+BIOS ROM   - 8k +
+Disk ROM   - ~8k
+RAM        - 16K +
+Cassette   - 16k +
+Boot Track - 4608 B   0x1200
+
+
+slz	   30
+legs.a     303
+mods       76f
+  total    aa2
+VM image   466
+
+
+in-place format
+
+0      - basic data
+2600   - chain boot area
+3800   - VM
+~3c86  - Modules   ( Mods can be near 2k )
+4500   - VM image
+
+Storage Format:
+
+slz uncompressor
+VM & Extensions - slz compressed
+Boot Modules
+Parameter Modules
+VM Memory Image
+
+
+Ways to boot up a coco:
+
+We cannot detect what's needed to boot - have use choose and save
+Problems: There's no guaranteed static storage in the CoCo.
+
+DSKCON provides a setup interface to storage - but only in the RSDOS format
+DSKCON cannot get at OS9 HD partitions (without trickery).
+
+Ways of booting a coco:
+   from a real disk via DOS (there's a drive)
+   via a Disk ROM          ( there's might not be a drive )
+   via a auto-start ROM    ( there might not be a drive )
+
+Boot up algorithm:
+   load boot params data (sector?) from oscon
+   if not setup then load menu overlay
+   wait for timeout
+   if timeout then load default
+   else menu
+
+
+chain - load a boot track
+drom  - load a disk rom image from slot
+os9   - load os9
+
+TURNING OFF HDB AUTOBOOT:
+
+- there's no fixed place or logic to do this.
+- we'll have to grep for the "AUTOEXEC" string and change it
+- from scanning current (1.4d) HDB the lowest 'AU' is at 0x1dfb
+- if we have room, maybe we can copy a new string in there.....
+
+search for AU from 0x1dfb...
+change letters to something unfindable ( spaces?!?)
+
+
+Disk ROM loading:
+   we cannot overwrite roms while we're using the disk
+   on a coco2:
+      copy system rom to ram
+   on a coco3:
+      copy rom image to 1000
+   call c002.
+
+Standard HDBDOS OS9 offset: 052ddc
+
+in HDB to turn off high-spead:  poke 65496,0
+
+
+ROFS / RSDOS Volume Sharing:
+
+0
+fat  -  0x133
+dir  -  0x134-0x13c
+lab  -  0x142
+auto -  0x144
+145 - free
+
+112 dir entries?
+
+*************************
+Problems
+*************************
+DECB and Nitros9 use IDE disks differently.
+  - OS9 addresses into the 512B disk sectors
+  - DECB addresses are aligned to 512B
+  - DECB DSKCON cannot directly load os9, as os9 odd sectors are
+    unreachable. 
+    NOTE: after perusing the HDB source, it looks like there is
+    a way to reach the other side of a true sector... something
+    about a primitive address of 0x600....
+
+*************************
+Booting OS9 (CCB2 style)
+*************************
+
+load a disk driver from dskcon
+execute the init routine
+mount fs
+chdir to modules dir
+load ccbkrn
+
+- merge krn, rel, boot, krn2 
+- load and use os9 boot drivers
+- compile own boot drivers
+- where to load ccbkrn to? ( which block/page ?)
+- mod working os9 fs to include discrete modules
+- os9 loading will most likely be a overlay for CCB2
+
+rbf:
+mount a fs
+read a file
+read a dir (built on read a file)
+how many files are needed?
+   - 1 to read/nav directories
+   - 2 to read boot list
+   - 3 to load modules
+
+
+OS9 BOOT DRIVER METHODS:
+
+* HWInit - Initialize the device
+*   Entry: Y = hardware address
+    	   U = pre allocated page of memory
+*   Exit:  Carry Clear = OK, Set = Error
+*          B = error (Carry Set)
+
+* HWRead - Read a 256 byte sector from the device
+*   Entry: Y = hardware address
+*          B = bits 23-16 of LSN
+*          X = bits 15-0  of LSN
+	   U = pre allocated page of memory
+*          blockloc,u = ptr to 256 byte sector
+*   Exit:  X = ptr to data (i.e. ptr in blockloc,u)
+
+
+reading files:
+
+file descriptor buffer
+data buffer
+ptr to segment
+sector count
+
+PROBLEM: traditional BOOT drivers only read the first 256 bytes of
+normally 512 byte physical sectors.  *My* sIDE drive is formatted with
+Cloud-9's newer RBF system that utilizes both pages of each sector.
+Booting is accomplished by loading OSBOOT from a normal formatted
+floppy .... something that CoCoBoot wants to do directly from the
+ill-formatted harddrive!
+
+PROBLEM BOOT DRIVERS: 
+wd1002 
+burke 
+rom
+
+drivers do not use boot_common .. and do their own bootfile
+loading. :(
+
+
+* boot modules stored in stock dir ( /ccb )
+* new composite "krn" "krn2" "rel" and "boot"
+   - they're all spaghettied up together
+* kernel init memory should be freeable
+* trace booting.
+
+
+
+* "DOS" loads REL BOOT KRN and exec's REL (kernel track)
+
+rel:
+   does>
+     turn off CPU IRQ's
+     turn off SAM IRQ's
+     set DP to 0
+     clear DP
+     setup GIME regs and mirrors in DP ( ff90 - ffa0 )
+     jump to execution start of KRN ( at 0xf000 )
+   data> none
+BOOT:
+   does>
+     inits boot device driver
+     loads os9boot into memory
+     returns to KRN
+   data> none
+KRN:
+   does> 
+     setup up more low memory
+     calls BOOT
+     links and executes KRNP2 ( in OS9Boot)
+   data>
+     system calls
+     constant page tramps, 
+     IRQ handlers
+
+old map:
+ os9boot
+ rel
+ boot
+ krn
+
+new map:
+ kinit  ( kinit code is not reserved )
+ os9boot
+ krn
+
+move as much out of krn and into kinit
+
+kinit todos:
+   how to find krn address to jump to it
+
+
+
+
+****************************
+Static Disk Directory
+****************************
+
+index    filename			notes
+0	 bpb.img			boot parameter block	
+1	 setup.fi 			bpb setup menus
+2	 images/decb.rom 		base disk extended color basic
+3	 images/hdbchs.dif     		driver specific hdb overlays + patch
+	 images/hdbdw3bc3.dif  		
+	 images/hdbdw3cc3.dif		
+	 images/hdbdw4cc3.dif		
+	 images/hdbtc3.dif		
+	 images/hdbd4n1.dif		
+	 images/hdbdw3bck.dif		
+	 images/hdbdw3jc2.dif		
+	 images/hdbkenton.dif		
+	 images/hdbdhdii.dif		
+	 images/hdbdw3cc1.dif		
+	 images/hdbdw3jc3.dif		
+	 images/hdblba.dif		
+	 images/hdbdw3arduino.dif	
+	 images/hdbdw3cc2.dif		
+	 images/hdbdw4cc2.dif		
+	 images/hdblrtech.dif		
+14	 hdbutil.fi			Rom examination 
+15	 os9.fi				new os9 boot loader
+16	 boot_ide.mod			start of os9 boot drivers
+
+
+
+
+*************************
+TODO
+*************************
+
+* mod BFC to play with dictionary
+* work on compiling modules
+* run-time versioning system / self-upgrade
+* double check C/6809 VM's for matching primitive tokens
+* consider adding VM boot-up command-line arguments (need reason!)
+* upgrade to lwasm 4.8 and test
+* replace int routine back to basic when done
+* load via cassette?
+* ROM needs a drive no argument
+* HDBOS uses uint8 at 014e to control "drive on/off" HD/Floppy divide
+* issue a DW command at boot? at profile boot?
+* refactor rofs.fs
+* pull out drive variables from dskcon in separate include
+* CPU speed control in dw2dsk....
+* add a forth outer interpreter
+* add a IDE informational scan
+* add a flash ripper / burner for hdb or cocoboot
+* mod sIDE base address in setup.fs to list select rather than wentry
+* move LEGS for 6809 to tools dir
+* move BFC for LEGS to tools dir
+* test bastard disks on rofs ( when enough files...)
+* make rofs check for too big disks and not overright boot track
+* consider changing index slot size to 4 bytes (allows for 62 files )
+* consider changing RSDOS fat to show free clusters where not used by ROFS
+* figure out return value for os9 boot modules
+* factor out objective word ( menu.fs and os9.fs )
+
+*************************
+BUGS
+*************************
+Make recurses foreverly if images aren't made first!
+basic's console routines are goofy after a hard reset in HDB?
+
+*************************
+LOG
+*************************
+
+* Made forth image base and size defined by external symbols
+* changed execution address to 3800 ( from 2600 )
+* mod's old ccb's rel and slz routine
+* changed slz.c to add two 0 bytes to end of file - 
+   it follows algorithm properly, and make Y reg = next char
+* added separate slz's - one for VM/mods and one for VM ram image
+* modded makefile to build a rsdos disk with ccb.bin and boot track.
+* mooded makefile to build a os9 disk with boot track.
+* removed dsdos and os9 images, built a rofs (read only file system)
+* modded bfc to a "setorg" to help create images
+* modded bfc to store CP,DH,XT differently depending on setorg
+* modded BFC make a tonumber factor word
+* modded BFC to make images
+* modded BFC to process more than one source file
+* made a word to detect a key down after boot (DECB doesn't work)
+* started on basic menus
+* creates a ROM loader routine
+* changed all to uppercase
+* started work on object-based menus
+* Add volume label to rofs ( sec no. 0x142 )
+* added HDB changes of offsets, flags, etc...
+* added HDB autoboot defeating
+* added a "Large List" widget
+* fixed upper/lower menus for numbers
+* moved sIDE base address from main menu to rom booting.
+* changed the text names of booting methods
+* added flag for disabling autobooting
+* made auto boot timeout count down
+* added "include" and "done" to bfc
+* created a def file to specify locations ( to rel/slz and VM use it )
+* altered base making of cocoboot to cat the VM mem to it
+   - but disabled size checking!!!!
+* made "include" immediate word conditional in BFC
+   - it now creates a word in dict same as the included filename
+* disk copy DW to OSCON
+* made a progress bar widget
+* tested dw3dsk utility
+* tested device addressing selection with sIDE
+* added license header to all source
+* made rofs work with bastard RSDOS fs.
+*** BIG CHANGES (again) in the bfc compiler may have broken this stuff!
+
+***********************************
+where at
+***********************************
+
+testing loading a sector
+
+s: cc count lsn1 lsn2
+
+forked boot_ide512 for reading 512 sectors
+modded the LBA mode - test!
+todo: mod the CHS mode (mostly stack change!)
+todo: fixup nitros9 makefile to compile this module.

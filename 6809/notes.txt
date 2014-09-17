@@ -1,0 +1,70 @@
+******************************
+TODO:
+******************************
+
+* Figure out OS9 Modules
+* Re-rerite "boot_common.asm"
+* write a wrapper function for forth engine
+
+
+
+
+
+Re-write "boot_common.asm"
+
+- size of instance data is written into os9 module header
+
+
+-- stack --
+sector data
+instance data
+instance data ptr
+
+
+s= @instance data ptr
+u= @instance data
+x= sector data
+sector ptr stored in instance data struct
+y= hardware address ( internal to module )
+
+
+\ od is address of object's instance data
+\ vmt is address of class's method table
+
+HWInit ( od vmt -- f ) \ Initialize Hardware 
+
+HWRead ( l h od vmt -- f ) \ Read a Sector
+
+HWTerm ( od vmt -- f ) \ Terminate driver instance  
+
+***********************
+Boot Module Methods
+***********************
+
+Method Assumptions: All registers modified.
+
+
+HWInit - Initialize the device
+   Entry: Y = hardware address
+          S = Data and Return Stack
+          u = instance data ptr
+          
+   Exit:  Carry Clear = OK, Set = Error
+          B = error (Carry Set)
+   Mods:  D, X 
+
+
+HWRead - read a block
+   Entry: Y = hardware address
+          B = bits 23-16 of LSN
+          X = bits 15-0  of LSN
+ 		   blockloc,u = ptr to 256 byte sector
+   Exit:  X = ptr to data (i.e. ptr in blockloc,u)
+          Carry Clear = OK, Set = Error
+          B = error (Carry Set)
+
+HWTerm - Destroy Instance
+    Entry: Y = hardware address
+    Exit:  Carry Clear = OK, Set = Error
+           B = error (Carry Set)
+    Mods:  D, X

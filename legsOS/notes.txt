@@ -1,0 +1,123 @@
+
+***********************************************
+General Memory Map
+***********************************************
+0000  2000  kernel code and data
+2000  4000  temp stack
+4000  6000  kernel dictionary
+6000  e000  application area  
+e000  ffff  forth interpreter ( task 0 only )
+
+
+
+***********************************************
+Kernel
+***********************************************
+Kernel is a micro kernel
+
+Each task has a 1 byte receive buffer.  Bytes
+are syncronously sent from client tasks to
+server tasks.  The server returns a byte in
+reply.  Atop this simplicity, the kernel can handle the
+passing of kernel objects (threads, or data )
+back and forth between tasks.  send and reply formats:
+
+1. send a char, recv a char  - slow as crap!
+2. send a kobj, recv a char  - medium
+3. send a kobj, recv a kobj  - heavy-duty data slug-fest smack-down
+
+
+All of the above can timeout.
+
+
+
+
+*****************************
+TODO's
+*****************************
+
+Make messages work with new sleeping system
+How to Timeout kernel calls. (which calls can time out? all?)
+exceptions: default handler?
+exceptions: use pointer-pointer so task can have different sub-handlers
+shell: move shell out to block boundary. ( "cp!" directive to bfc? )
+memory: task growing memory? howto?
+simpify.
+kernel.fs: map: make work with removing elements
+make boot up sequence sane ( auto-running forward refed words?)
+
+
+******************************
+BUG's
+******************************
+- Random locking of system???
+
+*************************************
+LOG
+*************************************
+fixed: texit: task 1 does exit correctly: parent dereferences incorrect!
+
+
+
+
+For catch an throw, the saved state frame is as follow:
+?: catch ( xt -- e )   \ catch a thrown error
+?: throw ( e -- e )    \ Returns in saved context
+
+Interface Functions
+
+: texit   ( u -- )       \ quit a thead, return u to parent
+: waitfor ( k -- u )     \ wait for task u to die, returns u with exit status
+: wait    ( -- k )       \ wait for any child task to die
+: stop    ( k -- )       \ stop a task from running
+: start   ( k -- )       \ wake a task
+: malloc  ( -- b )       \ Kern iface: allocate block memory
+: mfree   ( b -- )       \ Kern iface: free memory
+: alloc   ( -- k )       \ Kern iface: allocate kernel object
+: deref   ( k -- a )     \ de-references a kernel reference
+: attach  ( o -- k )     \ attached obj o to task's kernel references
+: close   ( k -- )       \ Kern iface: close kernel object
+: spawn   ( s0 xt -- k ) \ Kern iface: create thread
+: yield   ( -- )         \ yield to the kernel
+: sleep   ( u -- )       \ Kern iface: sleep for u ticks
+: sendc   ( c k -- c )   \ connect to task k sending c, and getting c as reply
+: recvc   ( --  c )      \ receive char from a client
+: replyc  ( c -- )       \ send reply char back to client
+: kinit   ( xt -- )      \ inits system
+Kernel extension words. Rules:
+: recvmsg ( -- m ) \ recv a message
+: replymsg ( m -- ) \ reply with message
+: sendmsgc ( m t -- c ) \ send a message, get char as reply
+: sendstrc ( ca kid -- c ) \ send a string, get char as reply *WATCHING*
+: sendcmsg ( c t -- m ) \ send c to task t, get m as reply
+: sendmsg ( m t -- m ) \ send a message, get message as reply
+: spallot ( -- a )
+: thread ( xt -- u ) \ creates new task in interpreter
+
+
+
+
+Breaking Kernel functions down in source code.
+   primitive zone .... generic, mostly stack based words
+   internal kernel ... interrupts stay off
+   interface zone .... interrupts are changed
+   public libs ....... interrupts stay on.
+
+
+The interface zone is the only place where interrupts are turned on or
+off.  There's some interface zone words, like "alloc" and "close",
+that look redundant.  They ensure the interrupts are turned off when
+executing kernel.  A syscall type interface could do this too. 
+
+internal : int are off, stay off.  
+interface zone: int are on, turn them off, don't call other iface zone words.  
+public libs: int are on, stay on.
+
+
+all IPC messages are sent via three primitives:
+
+sendc ( c k -- c ) \ send c to thread k, returns c from other thread
+recvc ( -- c )     \ server: receive c from any thread
+replyc ( c -- )    \ server: send reply c back to client thread
+
+On top of this can be constructed ever more elaborate means of IPC.

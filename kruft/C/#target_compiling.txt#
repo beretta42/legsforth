@@ -1,0 +1,29 @@
+Target Compiling.
+
+
+Problem:  Using Forth to compile an application for a target system.
+
+
+Definitions:
+   : Application - a stand-alone program, mean to natively run on a
+   host system.
+
+
+
+Regular words - 
+    code   - target code area
+    header - host code area
+    link   - target definitions area
+    env    - vocab legs target
+
+Immediate words -
+    code   - host code area
+    header - host code area
+    link   - target definitions area
+    env    - vocab legs forth target helpers 
+
+Helper words - 
+    code   - host code area
+    header - host code area
+    link   - helper code area
+    env    - vocab legs forth target helpers

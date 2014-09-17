@@ -1,0 +1,5 @@
+
+all: slz
+
+bfc: slz.c
+	cc -o slz slz.c

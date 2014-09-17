@@ -1,0 +1,237 @@
+TODOS:
+
+* static-ize the primitive function table
+* process more of the command line
+* bounds check sp,rp,ip and memory addressing
+* variable VM memory size
+* sync opcodes with spec
+* no echo terminal
+* convert \r's to \n
+
+
+************************************
+Global Variables
+************************************
+
+MACHINE GLOBALS:
+rp	     - return pointer
+sp           - stack pointer
+rvect        - reset vector
+ivect        - interrupt vector
+
+FORTH INTERPRETER GLOBALS:
+c0           - initial code pointer
+dh           - initial dictionary head
+cp           - code pointer
+dh           - dictionary pointer
+state        - compiler state
+vstack       - vocabulary stack
+legs,forth,vocab,localdefs - vocabulary list heads
+compile-list - name compile area
+cpp	     - code pointer pointer
+dpp	     - name pointer pointer
+lp	     - local name pointer
+localarea    - local name compile base pointer
+
+RUN-TIME GLOBALS:
+dmem         - head of system memory list
+runners      - head of running tasks list
+sleepers     - head of sleeping tasks list 
+
+
+* registers and global values are essentially the same thing
+
+Multi-tasking:
+
+tasks talk to each other using globals.
+  - messages - descrete chunks of data
+
+
+assumptions:
+   only one real processor - can be guaranteed by any system the VM
+   runs on.
+   The VM supports a timer interrupt.
+
+cooperative multitasking is fine for i/o bound tasks as we are going
+to assume a 1 processor enviroment.  However, a cooperative system
+isn't ideal for internally bound tasks - this burdens the programmer
+with calling a yield function where it makes no logical sense.  I.E.,
+in a sort function, which is internally-bound, has no business calling
+yield.  Also if a internally-bound task calls yield too much then the
+overhead of task switching robs all tasks of the cpu. If the yield
+function is not called enough, then the task robs other tasks.
+
+Preemptive multitasking solves the internally-bound task problem, but
+makes i/o bound tasks more complicated and requires some sort of
+cpu-external timer to execute code.  IO-bound tasks need to leave any
+shared global data in a known state. 
+
+
+***********************************************
+Kernel
+***********************************************
+Kernel is a micro kernel
+it supports memory allocation via chunks and
+process control
+
+
+***********************************************
+Shared Objects
+***********************************************
+
+Object will have public methods.  If an object is
+declared "shared", then only one task can access the
+object's methods at one time.  This will be imposed 
+by a mutex lock that's held.  If a task calls a method in
+an object that's already held by another task, it
+will be put on the lock's wait list and sleep.  When the
+controling task releases the lock the next task on the wait
+list will be awaken.
+
+
+
+: lock 
+    begin locked? while enlist sleep again
+    myself owner !
+    1 counter +!
+    counter 0= if overflow!
+;
+
+: release
+    myself 
+
+
+: key? ( -- f ) \ is there a key waiting 
+This primitve polls the unerlying keyboard code to see if there's a
+key to be retrieved.  It returns true if theres a key waiting
+retrieval or false if not.
+
+
+: idle ( -- ) 
+blocks until and interrupt happens. This primitive is used to let the
+LegsVM yield to the system (if any).  This way the VM doesn't suck all
+the juice out of a multitasked host (like Linux )
+
+key? dup 0< if drop exit then waiter wake
+
+
+*****************************
+file operations
+*****************************
+
+open
+close
+read 
+write
+setpos
+remove
+rename
+
+
+*****************************
+iterators
+*****************************
+
+should work for empty sets - test comes before action
+
+
+begin next? while gdata dosomething next repeat
+
+{{ dosomething }} iter foreach
+
+
+*****************************
+TODO's
+*****************************
+
+* Object: Exceptions for instanciating abstract classes
+        or unimplemented interface methods
+* Create multilevel return ( catch/throw )
+* reset stack doesn't work (should delete objects)
+
+
+******************************
+BUG's
+******************************
+* running out of cache objects ? ( open files?)
+* "\" doesn't work for empty lines
+* "\" doesn't work for unix LF, only CR !
+
+
+******************************
+Observations
+******************************
+* name collisions still very possible!
+
+
+
+******************************
+Path Resolution
+******************************
+
+"file"      - relative to working directory
+"/dw/file"  - relative to root ( overridden with mounts )
+"/dir/file" - not overriden.
+
+
+parse by "/"
+zero length string? error.
+first token is 0? parse goto root
+relative to root.
+
+
+root lookup:
+  parse name. is it a mount? look up in mount root
+  parse name
+
+
+
+
+******************************
+Class Structure
+******************************
+
+
+obj                    abstract object
+  container            abstract container
+    list 	       link list container
+     cdevs             list of charactor devices
+     bdevs             list of block devices
+     cache             list of disk cache objects
+     fses              list of filesystems
+     mounts            list of mounts
+     dir	       directory container
+      os9dir	       os9 directory container
+  iter		       abstract iterater 
+    liter              link list iterator
+    diter	       directory iterator
+      os9diter         os9 directory iterator
+  assoc	               association
+    os9dirent          os9 directory entry
+    massoc             memory allocated association
+     cdev              charactor device
+      becker           becker charactor device
+     bdev              block device
+      dw4              DriveWire 4 block device
+     fs                Filesystem instance
+      rbf              os9 filesystem
+  litem                node of a linked list
+  cob                  disk cache object
+  file		       file 
+   os9file             os9 filesystem file
+  
+
+iforeach ( iter xt -- f ) 
+foreach ( container xt -- obj | 0 ) 
+
+
+*************************************
+LOG
+*************************************
+
+Changed C's MEMZ to 32k
+Changed file:geta to always return 2 args on EOF ( source of multiple errors)
+
+
+
+

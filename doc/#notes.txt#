@@ -1,0 +1,349 @@
+TODOS:
+
+
+* create a block system
+* create a file system
+* build DriveWire cable
+* create a standard spec for future/external reference
+
+
+- Memory store starts at address 0 - the VM is to translate the address
+- VM's need to load an image (or be compiled with one)
+       - simple systems can be compiled with a basic interpreter
+       - complex systems can load & save
+      
+
+********************************************
+Registers:
+********************************************
+all registers are CELL wide
+
+IP	The instruction pointer 
+SP	The data stack pointer  
+RP	The return stack pointer
+
+
+*****************************************
+Primitives:
+*****************************************
+
+opcode	name	stack			meaning
+
+0	exce    ( -- )			set IP to exception vector
+1	push	( x -- )		push TOS onto return stack
+2	pull	( -- x )		pull cell from return stack
+3	drop	( x -- )		drop TOS off the data stack
+4	dup	( x -- x x )		duplicate TOS
+5	swap	( a b -- b a )		swap TOS and NOS
+6	over	( a b -- a b a )	duplicate NOS
+7	bra	( -- )	       		unconditional branch to absolute address following opcode
+8	0bra	( x -- )		branch to absolute address following opcode if TOS is 0
+9	dofor	( -- ) 			if top of return stack is zero: drop counter from branch, else dec count
+10	;	( -- )			exit routine - set ip to address pulled from top of the return stack 
+11	mint	( -- n )		push the lowest signed number onto stack
+12	and	( a b -- c )		bitwise and TOS and NOS ( c=a&b )
+13	or	( a b -- c )		bitwise or TOS and NOS ( c=a|b )
+14	xor	( a b -- c )		bitsize xor TOS and NOS ( c=a^b )
+15	com     ( n -- n ) 		1's compliment TOS
+16	+	( a b -- c )		add TOS and NOS ( c=a+b )
+17	shl	( a -- a ) 		logical shift TOS left 
+18	shr	( a -- a )		logical shift TOS right
+19	1+	( x -- x ) 		increment TOS
+20	1-	( x -- x )		decrement TOS
+21	sp@	( -- a )   		fetch value of SP
+22	sp!	( a -- )		store TOS in SP
+23	rp@	( -- a )		fetch value of RP
+24	rp!	( a -- )		store TOS in RP
+
+25	jmp	( a -- )		store address in IP
+26	@	( a -- x )		fetch cell data from address a
+27	!	( x a -- )		store x in cell address a
+28	c@	( a -- c )		fetch charactor data from address a
+29	c!	( c a -- )		store c in cell address a
+30	cell	( -- x )		put number of bytes of a cell on the stack
+31	char 	( -- x )		put number of bytes of a charactor on the stack
+32	lit	( -- x )		pushes x from instruction stream
+33	key	( -- c )		get a charactor from stdin
+34	emit	( c -- )		emits a charactor to stout
+35	bye	( -- ) 			quits VM
+36	memz 	( -- u )		pushes size of VM's memory
+
+***********************************************
+VM loop algorithm:
+***********************************************
+
+loop:	fetch opcode from IP
+	increment IP
+	if opcode  < 256 then run associated primitive
+	else push IP onto return stack 
+	make IP = opcode (address) 
+	goto loop
+
+
+***********************************************
+VM startup:
+***********************************************
+
+on startup (reset) the VM should automatically load registers from the following memory store addresses:
+
+cell addr  	 what
+0		 reset vector address
+1		 interrupt vector address
+2		 c0 - end of memory
+3		 dh - head of dictionary, if any		 
+
+
+
+advanced compiler
+
+* input stack
+* branched tree / hashed tree name lookup
+
+
+
+
+Signed/Unsigned Number comparisons
+
+unsigned lower        C = 1
+unsigned higher       C or Z = 0
+equal	 	      Z = 1
+signed lower 	      N xor V = 1
+signed higher	      Z or { N xor V }=0
+
+
+
+****************************************
+Devices
+****************************************
+
+Block Devices:   seekable, fixed block size
+
+ IDE             MPI, base address
+ Floppy	         MPI, base address, NMI, different sizes 
+ DW	         tied to a Char device
+ SCSI	         MPI, base address
+ TAPE		 non-seekable
+
+Char Devices:    Not seekable
+
+ int keyboard	 read only, quasi-irq driven
+ vgd 		 write only
+ gimme		 write only
+ becker iface	 possible MPI
+ DW serials	 tied to a DW device
+ joysticks	 write only
+ bitbanger	 read / write
+ deblock	 makes block devices look like char devices
+ rs232 pack	 MPI
+ ORCH90/SSP	 MPI
+
+
+ methods:
+ key
+ emit
+ 
+
+
+
+
+
+Problem 1.: in order to provide fast service, the 115k bitbanger
+  routines work on variable sized blocks and provides crc's and such.
+  This doesn't fit into the Char Device model. so
+
+  1. Treat bitbanger as a block device
+      a. what else are people using the bitbanger for? (printer)
+      b.  
+  2. Statically Tie bitbanger to DW - a block device
+      a. then reusing DW routines with a RS232 or Becker would stink
+  3. 
+
+
+
+
+*********************************
+cross compiling - no outer interpreter
+*********************************
+
+
+compile mode:
+   code is compiled to separate area from host
+   definitions are compiled to host area
+   addressed are compiled with target offset adjustment 
+
+   dictionary lookups:
+       target dictionary
+       primitive dictionary
+
+immediate mode:
+   code is compiled to host area
+   
+   dictionary lookups:
+   	target dictionary
+	primitive dictionary
+   
+
+host code + host names interleaved ( same pointer )
+code pointer
+<expantion space>
+
+base address
+target code pointer
+<expantions space>
+
+stacks
+
+
+definitions are always compiled to cp
+code is compiled to host or target areas
+
+definitions are linked to target or host area
+
+            primitives
+ 	    ^        ^
+           /          \
+        target       host
+
+two separate problems: (1) how names are linked and found
+                       (2) where code and headers are compiled
+
+
+double indirection to solve problem (2)
+
+variable host     \ pointer to host area
+variable target   \ pointer to target area
+
+host    variable cpp   \   pointer to code pointer
+host    variable dpp   \   pointer to dictionary pointer
+
+: cp     cpp @ ;
+: here   cp @ ;
+: ,      cp swap !+ cp ! ;
+: c,	 cp swap c!+ cp ! ;
+
+
+: dp 	 dpp @ ;
+: dhere	 dp @ ;
+: d,	 dp swap !+ dp ! ;
+: dc, 	 dp swap c!+ dp ! ;
+
+
+: :
+  dhere 0 d,		  \ reserve link
+  dhere 0 d,              \ reserve xt
+  0 d,                    \ compile blank flag
+  word dup ds, dh	  \ parse name, compile, get hashed lsit head
+  swap                    
+  here swap !		  \ 
+  dup @ -rot over swap !
+  !
+  ]
+;
+
+latest @link
+
+
+link xt flag name
+
+
+
+***************
+
+
+target regular:
+   code goes to tartget area
+   definition goes to host area
+   definition goes to target list
+
+target immediate:
+   code goes to host area
+   definition goes to host area
+   definition goes to target list
+
+
+compile mode:
+   lookup word in target list
+   if immediate compile
+
+
+***********************
+input source 
+***********************
+
+key ( -- c ) get a key from source
+
+
+*********************
+RSDOS 
+*********************
+
+track 17                             lsn #306-323
+sector 2 is fat                      lsn #307
+sector 3-11 (9 sectors) is dir       lsn #308
+
+granules are 9 sectors
+35 tracks
+18 sectors
+
+
+**********************
+Sector Cache
+**********************
+device         
+drive          
+lsn
+flag
+block data
+
+
+**********************
+Block Device
+**********************
+get sector
+put sector
+
+
+**********************
+File Struct
+**********************
+
+pointer to file ops in filesystem
+sector buffer address ( from block system )
+
+
+
+Major Structures:
+
+devices - keyed by name
+filesystems - keyed by name
+mounts - keyed by mount point
+   device
+   filesystem
+   instance data
+
+
+
+file system methods:
+
+root - opens the root directory as a file
+
+
+rsdos:
+  current granule no. ( 0-8 )
+  sector of granule   ( 0-8 )
+  byte of sector      ( 0-255 )
+  
+lsn = fat( gran ) * 9 + sec
+
+
+**************************************
+Widget System
+**************************************
+
+Based on Objects
+
+methods:
+  clicked
+  focused
+  draw
+  

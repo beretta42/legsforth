@@ -1,0 +1,19 @@
+;;; 
+;;;
+;;;
+;;;
+
+	org	0x2600
+start
+	ldx	#gmoda
+  	ldd	#0x40
+	jsr	rprim		; register "test"
+	jmp	goforth		; go run forth
+        
+gmoda
+	ldd	#mod
+	pshu	d
+	lbra	next
+
+mod
+	includebin "boot_dw3_becker"

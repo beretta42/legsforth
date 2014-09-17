@@ -1,0 +1,6 @@
+
+rofs: rofs.c
+	gcc -o rofs rofs.c
+
+clean: 
+	rm -f *# *~

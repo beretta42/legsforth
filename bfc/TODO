@@ -1,0 +1,25 @@
+
+* make negative hex numbers work
+* factor out >num
+* parse command line args
+* command line defined memory store size
+* control stack checking
+* memory store address bounds checking
+* make target dictionary
+* print warning for redefining host immediate word
+* print linkage statitics
+* deal with different CELL widths (16/24/32....)
+* create host immediate word to make new primitives
+* create a flexible system for defining different dictionary formats
+* support devirtualized memory - will speed up simple machines (like cocos)
+
+
+concerning dictionary format:
+
+compile link address
+compile xt
+compile flags as a charactor or cell
+compile size of name
+compile name
+compile part of name
+compile name with bit-7 set

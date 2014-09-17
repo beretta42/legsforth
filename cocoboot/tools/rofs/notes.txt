@@ -1,0 +1,40 @@
+*********************************
+Format
+*********************************
+
+superblock 
+array of slots
+
+superblock structure
+offset	  size       what
+0	  2	     magic bytes: 'BG'
+2	  2	     version bytes
+4	  1	     1st unused slot
+	  5	     size of structure
+
+slot structure
+offset	  size       what
+0	  2	     start lsn
+2	  2	     no of sectors
+4	  4	     reserved
+	  8	     size of structure
+
+
+*********************************
+TODO
+*********************************
+
+
+
+*********************************
+BUGS
+*********************************
+
+
+
+
+*********************************
+LOG
+*********************************
+
+

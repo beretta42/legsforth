@@ -1,0 +1,83 @@
+: <    2dup xor 0< if drop 0< exit then - 0< ;
+For catch an throw, the saved state frame is as follow:
+: catch ( xt -- e )  \ catch a thrown error
+: throw ( e -- e ) \ Returns in saved context
+: ffz ( a u -- a | 0 ) \ find first zero byte
+\ Task States:
+\ some parallel tables: 
+    Kernel internel words. RULES:
+: open ( u -- ) \ (re)Opens block
+: free ( u -- ) \ Closes block
+: salloc ( -- u ) \ Get memory block
+: oderef ( u -- a ) \ dereference obj to an address
+: a2o ( a -- u ) \ changes address to Object ID
+: oopen ( u -- ) \ opens an object
+: oclose ( u -- ) \ closes an object
+: oalloc ( -- u | -1 ) \ allocate a kern
+: talloc ( -- u | -1 ) \ allocate a task's object table entry, but dont commit.
+: tderef ( u -- a ) \ deference task obj's ref to address
+: kalloc ( -- u | -1 ) \ allocate kernel object
+: kderef ( u -- a ) \ find address, a, of kernel object no u.
+: kopen ( u -- ) \ Reopens, increment reference count of object
+: kclose ( u -- ) \ Closes, decrements reference count of object
+: kattach ( o -- u ) \ make local reference to kobj u, return handle
+\ MOD: change to make elements removable off list while iterating
+\ xt prototype:  xt ( ... a -- ... f )
+: map ( xt 1st -- a | 0 )  \ maps xt onto list
+: helper ( a ta -- a f )
+: lh ( ta -- lh ) \ puts address of list head for node
+: prev ( ta -- ta ) \ find previous task in list
+: unlink ( a -- )  \ remove task off it's list  
+: zexit ( a code -- ) \ exit the next to words if this task is a zombie
+: tsleep ( a code -- )    \ send task to sleep list
+: twake ( a code -- ) \ wake task, a, with wake code
+: kspawn ( s0 xt -- k ) \ spawn a task
+: helper ( u a -- u f )
+: notify ( OID -- )   \ wake all tasks waiting for OID
+: nextt ( -- a ) \ goes to next task
+: nexts ( -- a ) \ goes to next task while sleeping
+: kyield ( -- ) 
+: ksleep ( code u -- w ) \ sleep for u jiffies in st state. w is a wake code
+: owait ( OID -- ) \ go to sleep waiting for OID
+: rel ( OID -- ) \ release a lock
+: lock ( OID ) \ obtain lock on OID
+: release ( OID ) \ release lock on OID
+: relwait ( OID ) \ release lock and wait on 
+: CSTwait ( c OID -- ) \ wait until OID  value is c, leave locked
+: myid ( -- OID ) \ my Object ID
+: helper ( a -- f )
+: interrupt ( -- ) \ This will be called once a tick
+: newkey
+: kdestroy ( u a -- ) \ exit task a with return value of u
+These next words are interface to the kernel. They should:
+: texit ( u -- )  \ exit task with return value of U
+: waitfor ( kid -- u ) \ wait for task u to die, returns u with exit status
+: a2k ( a -- k ) \ not sure I like this... it re-references an ka
+: helper ( oid a -- oid f ) \ checks task a for match for wait
+: wait ( -- kid ) \ wait for any child task to die
+: stop ( kid -- ) \ stop a task from running
+: start ( kid -- ) \ wake a task
+: malloc ( -- b )  \ Kern iface: allocate block memory
+: mfree ( b -- ) \ Kern iface: free memory
+: alloc ( -- k | -1 ) \ Kern iface: allocate kernel object
+: deref ( k -- a ) \ de-references a kernel reference
+: attach ( o -- k ) \ attached obj o to task's kernel references
+: close ( k -- ) \ Kern iface: close kernel object
+: spawn ( s0 xt -- k ) \ Kern iface: create thread
+: yield ( -- ) \ yield to the kernel
+: sleep ( u -- w ) \ Kern iface: sleep for u ticks
+: kill ( k -- ) \ kills a task
+: listen ( -- ) \ tell waiting clients we're listening
+: sendc ( c t -- c ) \ connect to task t sending c, and getting c as reply
+: recvc ( --  c ) \ receive char from a client
+: replyc ( c -- ) \ send reply char back to client
+: kinit ( xt -- ) \ inits system
+Kernel extension words. Rules:
+: recvmsg ( -- m ) \ recv a message
+: replymsg ( m -- ) \ reply with message
+: sendmsgc ( m t -- c ) \ send a message, get char as reply
+: sendstrc ( ca kid -- c ) \ send a string, get char as reply *WATCHING*
+: sendcmsg ( c t -- m ) \ send c to task t, get m as reply
+: sendmsg ( m t -- m ) \ send a message, get message as reply
+: spallot ( -- a )
+: thread ( xt -- u ) \ creates new task

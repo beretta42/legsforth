@@ -1,0 +1,365 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
+#define CELL 2           // width of cell in bytes
+#define MEMZ 16384       // Memory Store size
+#define RVECT   0*CELL  
+#define EVECT   1*CELL
+#define IVECT   2*CELL
+#define MMAX    3*CELL
+#define C0      4*CELL
+#define DH      5*CELL
+
+typedef unsigned short int cell ;
+typedef void prim() ;
+
+unsigned char m[MEMZ];   // The Memory Store
+
+cell ip=0;          // The Instruction Pointer
+cell rp=MEMZ ;      // The Return Stack Pointer
+cell sp=MEMZ-0x80 ; // The Data Stack Pointer
+cell t=0 ;          // top popped working reg
+cell n=0 ;          // next on stack working reg
+
+prim *p[256];       // primitive function pointer table
+
+int debugf=0;       // debug flag
+int dlevel=0;       // debug level
+
+// Fetches a Cell from Memory Store
+cell mfetch( cell addr ){
+  // fprintf(stderr,"fetch addr: %x = %x\n", addr, (cell)m[addr]<<8+m[addr+1] );
+  return m[addr]*256 + m[addr+1] ;
+}
+
+// Stores a Cell to Memory Store
+void mstore( cell data, cell addr ){
+  m[addr]=data >> 8;
+  m[addr+1]=data & 0xff ;
+}
+
+// Drop cell off stack
+void drop(){
+  sp=sp+CELL;
+}
+
+// Pops data off the data stack
+cell mpop(){
+  cell t=mfetch( sp );
+  drop();
+  return t;
+}
+
+// Pops 2 cells off data stack
+void m2pop(){
+  t=mpop();
+  n=mpop();
+}
+
+// Pushes data onto the data stack
+void mpush( cell data ){
+  sp=sp-CELL;
+  mstore( data, sp );
+}
+
+//
+//  VM Primitives
+//
+
+void push(){
+  r[--rp]=mpop();
+}
+
+void pull(){
+  mpush(r[rp++]);
+}
+
+
+void dup(){
+  cell t=mpop();
+  mpush(t);
+  mpush(t);
+}
+
+void swap(){
+  m2pop();
+  mpush( t );
+  mpush( n );
+}
+
+void over(){
+  push();
+  dup();
+  pull();
+  swap();
+}
+
+void bra(){
+  ip=mfetch( ip );
+}
+
+void zbra(){
+  if( mpop() ) ip=ip+CELL;
+  else bra();
+}
+
+void dofor(){
+  if( r[rp] ){
+    r[rp]=r[rp]-1;
+    ip=ip+CELL;
+    return;
+  }
+  rp++;
+  bra();
+}
+
+void fexit(){
+  ip=r[rp++];
+}
+
+void mint(){
+  mpush( 0x8000 );
+}
+
+void and(){
+  m2pop();
+  mpush( t & n );
+}
+
+void or(){
+  m2pop();
+  mpush( t | n );
+}
+
+void xor(){
+  m2pop();
+  mpush( t ^ n );
+}
+
+void com(){
+  mpush( ~mpop() );
+}
+
+void plus(){
+  m2pop();
+  mpush( t + n );
+}
+
+void shl(){
+  mpush( mpop()<<1 );
+}
+
+void shr(){
+  mpush( mpop()>>1 );
+}
+
+void oneplus(){
+  mpush( mpop()+1 );
+}
+
+void oneminus(){
+  mpush( mpop()-1 );
+}
+
+void spat(){
+  mpush(sp);
+}
+
+void spbang(){
+  sp=mpop();
+}
+
+void rzero(){
+  rp=RSTACKZ;
+}
+
+// this doesn't belong here 
+void pexec( cell xt ){
+  if( xt<256 ) p[xt]();
+  else{
+    r[--rp]=ip;
+    ip=xt;
+  }
+}
+
+void exec(){
+  pexec( mpop() );
+}
+
+void at(){
+  mpush( mfetch( mpop() ) );
+}
+
+void bang(){
+  m2pop();
+  mstore( n, t );
+}
+
+void cat(){
+  mpush( m[mpop()] );
+}
+
+void cbang(){
+  m2pop();
+  m[t]=n&255;
+}
+
+void fcell(){
+  mpush( CELL );
+}
+
+void fchar(){
+  mpush( 1 );
+}
+
+void lit(){
+  mpush( mfetch( ip ) );
+  ip+=CELL;
+}
+
+void key(){
+  mpush( getchar() );
+}
+
+void emit(){
+  putchar( mpop() );
+}
+
+void bye(){
+  exit(0);
+}
+
+void noop(){
+  printf("noop!\n" );
+  printf("@ip: 0x%x\n", ip-CELL );
+  exit(-1);
+}
+
+void debugon(){
+  debugf=~debugf;
+  dlevel=rp;
+}
+
+void init(){
+  int x;
+  FILE *f;
+  for( x=0; x<MEMZ; x++){
+    m[x]=0;
+  }
+  // load the memory store
+  f=fopen("forth.img","r");
+  if( !f ){
+    fprintf(stderr,"Fatal error loading memory image.\n" );
+    exit(-1);
+  }
+  fread( m, 1, MEMZ, f );
+  fclose( f );
+  // setup the primitive function table 
+  for( x=0; x<256; x++) p[x]=noop;
+  p[1]=push;
+  p[2]=pull;
+  p[3]=drop;
+  p[4]=dup;
+  p[5]=swap;
+  p[6]=over;
+  p[7]=bra;
+  p[8]=zbra;
+  p[9]=dofor;
+  p[10]=fexit;
+  p[11]=mint;
+  p[12]=and;
+  p[13]=or;
+  p[14]=xor;
+  p[15]=com;
+  p[16]=plus;
+  p[17]=shl;
+  p[18]=shr;
+  p[19]=oneplus;
+  p[20]=oneminus;
+  p[21]=spat;
+  p[22]=spbang;
+  p[23]=rzero;
+  p[24]=exec;
+  p[25]=at;
+  p[26]=bang;
+  p[27]=cat;
+  p[28]=cbang;
+  p[29]=fcell;
+  p[30]=fchar;
+  p[31]=lit;
+  p[32]=key;
+  p[33]=emit;
+  p[34]=bye;
+  p[255]=debugon;
+  ip=mfetch( RVECT );
+  fprintf(stderr,"init ip: 0x%x\n", ip );
+  mstore( MEMZ, MMAX );
+}
+
+void rfind(cell xt){
+  cell x=mfetch( DH );
+  while(1){
+    if (!x){ 
+      fprintf(stderr,"???\n" );
+      return;
+    }
+    if (mfetch(x+2)==xt){
+      cell i;
+      for( i=x+8; i<x+8+mfetch(x+6); i++ ){
+	fprintf(stderr, "%c", m[i] );
+      }
+      fprintf(stderr, "\n" );
+      return;
+    }
+    x=mfetch(x);
+  }
+}
+
+void debug(){
+  int x;
+  fprintf(stderr,"ip: %x next: %x  ", ip, mfetch(ip) );
+  rfind( mfetch(ip) );
+  fprintf(stderr,"data: " );
+  for( x=MEMZ-CELL; x>=sp; x=x-CELL ){
+    fprintf( stderr,"%x ", mfetch(x) );
+  }
+  fprintf( stderr, "\n" );
+  fprintf(stderr,"ret: " );
+  for( x=RSTACKZ-1; x>=rp; x-- ){
+    fprintf( stderr,"%x ", r[x] );
+  }
+  fprintf( stderr, "\n>" );
+  x=getchar();
+  if( x=='i' ) dlevel--;
+  if( x=='o' ) dlevel++;
+  if( x=='s' ) debugf=~debugf;
+  if( x=='q' ) exit(0);
+  if( x=='m' ){
+    int i;
+    int x;
+    fscanf( stdin, "%x", &x );
+    for( i=0; i<8; i++ ){
+      fprintf(stderr,"%2x ", m[ x+i ] );
+    }
+    fprintf(stderr,"\n");
+  }
+}
+
+
+void loop(){
+  cell t;
+  while(1){
+    if (debugf && rp==dlevel) debug();
+    t=mfetch(ip);
+    ip+=CELL;
+    pexec(t);
+  }
+}
+
+
+
+void main(){
+  init();
+  loop();
+}

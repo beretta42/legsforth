@@ -1,0 +1,71 @@
+What is Legs?
+
+Legs is an attempt to create a simple Virtual Machine that will run
+across platforms that doesn't suck.  The Virtual Machine is designed
+to be condusive to running a Forth system on it.  This idea is NOT
+new.  Basic Forth is a semi-virtualization of a stack-based CPU, and
+Legs just takes it a step further.  Other Virtual machines: SCUMMVM
+from Lucas Arts, Java from Sun (now Oracle), the Z-machine from
+infocom, and Ngaro from the RetroForth project.  Currently there is a
+LegsVM written for Linux (16-bit) and the Tandy Color Computer 2/3
+(16-bit).  Legs is designed to be data-width agnostic (I hope!) -
+there's nothing in the Spec that precludes the making of a 16,24,32,64
+bit versions of the machine.
+
+The basic on the Legs VM spec:
+
+3 directly-accessable registers:
+SP  - The Data Stack Pointer, 1 cell wide
+RP  - The Return Stack Pointer, 1 cell wide 
+IP  - The Instruction Pointer, 1 cell wide 
+
+38 instructions:
+
+exce   set IP to exception vector
+push   push top of stack onto return stack
+pull   pulls from return stack
+drop   drop TOS off the data stack
+dup    duplicate TOS
+swap   swap TOS and NOS
+over   duplicate NOS
+bra    unconditional branch to absolute address following opcode
+0bra   branch to absolute address following opcode if TOS is 0
+dofor  if top of return stack is zero: drop counter from branch, else dec count
+;      exit routine - set ip to address pulled from top of the return stack 
+mint   push the lowest signed number onto stack (implimentation primitive)
+and    bitwise and TOS and NOS ( c=a&b )
+or     bitwise or TOS and NOS ( c=a|b )
+xor    bitsize xor TOS and NOS ( c=a^b )
+com    1's compliment TOS
++      add TOS and NOS ( c=a+b )
+shl    logical shift TOS left 
+shr    logical shift TOS right
+1+     increment TOS
+1-     decrement TOS
+sp@    fetch value of SP
+sp!    store TOS in SP
+rp@    fetch value of RP
+rp!    store TOS in RP
+exec   stacks IP and executes instruction from stack
+@      fetch cell from address 
+!      store cell to address
+c@     fetch charactor from address 
+c!     store charactor to address 
+cell   put number of bytes of a cell on the stack
+char   put number of bytes of a charactor on the stack
+lit    pushes x from instruction stream
+key    get a charactor from console
+emit   emits a charactor to console
+bye    quits VM
+memz   pushes size of VM's memory
+p@     get a charactor from REAL memory
+p!     store a charactor to REAL memory
+
+Machine Loop:
+
+Loop:
+  Fetch exectuion token (xt) from IP
+  Increment IP
+  if xt is less then 256 then call primitive
+  else push IP onto Return Stack, and set IP=xt
+  goto Loop

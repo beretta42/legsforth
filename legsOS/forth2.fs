@@ -334,6 +334,7 @@ export
     1 tp@ >PAR c!    \ this should be in kinit...
     rp@ r0 !
     sp@ s0 !
+    0 0	!
     ." LegsOS kernel started" cr
     begin lit interpret catch
 	dup 0< if ." SysErr: " dup .  texit then
@@ -345,18 +346,11 @@ export
 
 6000 cp !
 d000 dp !
-launch
-' clocker thread .
+
+' launch 0 !
 
 \ interact
 \ bye
-
-
-\ ****************************************
-\ This is the end of the Outer Forth
-\ interpreter - stuff from here down
-\ be in its own file.
-\ ****************************************
 
 
 

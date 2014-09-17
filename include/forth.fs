@@ -1,88 +1,4 @@
-( This File is to be executed by bfc - a legs forth cross compiler.
- bfc is not a true forth, as it lacks true extendable immediate mode.
- you will notice that regular old "exit" finishes most definitions,
- but not all - As a few definitions are allowed to "fall-through" to
- the next defined words.
 
- Words ending in ' are prime words - these are the original "doers" of
- defered words, that can be redefined later - which is most of the
- global variables state, cp, dh, and the replaceable parts of the
- "outer interpreter".  Legs uses an inherent Direct Threaded Code , or
- DTC model, and words are not natively redirectable without adding a
- wrapper word.
- 
- You will notice a lack of text output words.  We don't need them for
- this file - we're just trying to produce a self-hosting forth and a
- few extension hooks for now, nothing more.  bfc provides a basic
- debugger allowing one to debug this code without defining output words.
-
-)
-
-
-
-p: ff debug \ toggle debugging
-p: 2b save  \ ( -- ) save state / write to filesystem
-p: 2c tp! \ ( a -- ) sets task pointer
-p: 2d tp@ \ ( -- a ) retrieves current task pointer
-p: 2e yieldto \ ( a -- ) saves task state, restore state a
-
-( Notes on tp! and tp@ - Task Pointer
-
-"tp!" doesn't just set the machine register. It causes the machine to
-save it's state to the current value of tp *before* setting tp's new
-value, and setting the machine state from that.  Fetching just returns
-tp, nothing fancy.  Manipulating TP allows for forking, threading, and
-simple memory paging. The exact length and structure of TP is yet to
-be determined.
-
-Task Pointer
-IP   0  2  Saved IP register
-RP   2  2  Saved Return stack ptr
-SP   4  2  Saved Data stack ptr
-EX   6	1  Saved CPU state interrupt enable 
-MMU  7  8  Mirror of MMU regs
-
-)
-
-: noop  ;		                \ no operation
-: cell+	cell + ;			\ increments by a cell
-: r@      rp@ cell+ @ ;                 \ copy top of return stack
-: docreate  r@ cell+ pull @ exec ;      \ the action of a "created" word
-: true  -1 ;
-: NULL
-: false 0 ;
-: dovar pull ;	     			\ the variable "doer"
-: char+ char + ;			\ increments by a char
-: !+    over ! cell+ ; ( a x -- a )	\ stores and inc. a
-: c!+   over c! char+ ;    	     	\ cstores and inc. a
-: @+    dup cell+ swap @ ; ( a -- a x ) \ fetches and inc. address
-: c@+   dup char+ swap c@ ; 	      	\ cfetches and inc. address
-
-: 0=	if 0 else -1 then ;		\ tests for 0
-: 0<    mint and if -1 else 0 then ; 	\ tests for negative
-: neg	com 1+ ;			\ negate
-: -	neg + ;				\ subtract
-
-: rot	push swap pull swap ;	     	\ rotates top three cells
-: 3drop	drop 	       	    		\ drops three cells
-: 2drop drop drop ;			\ drops two cells
-: 2dup	over over ;			\ dups two cells
-: tuck	swap over ;			\ tuck TOS under NOS
-: nip	swap drop ;			\ removes NOS from stack
-: -rot  rot rot ;                       \ bury TOS three deep
-: u<	2dup xor 0< if nip 0< exit then - 0< ;
-
-: ekey  key dup emit ;     		\ gets a key and echoes 
-: +!	tuck @ + swap ! ; ( x a -- )	\ increment var by x
-: c+!   tuck c@ + swap c! ; ( c a -- )  \ increment cvar by x
-
-: unloop pull pull drop push ;          \ unloop for exit
-: dofield @ + ;                         \ for structures
-: mv ( dest src count -- )              \ move count bytes from src to dest
-  for c@+ push swap pull c!+ swap next 2drop ;
-: =     - 0= ;                          \ equality test
-: clear ( a u ) \ clear u bytes starting at address a
-   for false c!+ next drop ;
 
 
 \ *******************************
@@ -236,3 +152,5 @@ offset	size	what
   latest >name @+ + dp ! \ set DP from latest
   quit
 ;
+
+done

@@ -45,6 +45,7 @@ memory: task growing memory? howto?
 simpify.
 kernel.fs: map: make work with removing elements
 make boot up sequence sane ( auto-running forward refed words?)
+merge "forth2.fs" together between projects?
 
 
 ******************************

@@ -538,11 +538,13 @@ Kernel extension words. Rules:
     tderef c@ replyc ;
 
 : sendmsgc ( m t -- c ) \ send a message, get char as reply
-    push dup tderef c@ pull sendc ;
+    push tderef c@ pull sendc ;
+
+ 
 
 : sendstrc ( ca kid -- c ) \ send a string, get char as reply *WATCHING*
     push alloc dup push deref over @ !+ swap @+ mv
-    pull pull sendmsgc
+    pull dup pull sendmsgc swap close
 ;
 
 : sendcmsg ( c t -- m ) \ send c to task t, get m as reply

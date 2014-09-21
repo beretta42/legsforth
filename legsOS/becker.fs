@@ -21,14 +21,18 @@
 : bkrAccept ( a u -- ) \ accept u bytes from becker port into buffer
     for bkrKey c!+ next drop ;
 
-: dwTime ( a -- ) \ get time from DW into buffer
-    23 bkr! 6 bkrAccept ;
-
 : dwInit ( -- ) \ initializes DW connection
     49 bkr! ;
 
 : dwTerm ( -- ) \ terminate DW connection
     54 bkr! ;
+
+: dwReset ( -- ) \ resets the DW connection
+    ff bkr! ;
+
+
+: dwTime ( a -- ) \ get time from DW into buffer
+    23 bkr! 6 bkrAccept ;
 
 : dwVopen ( u -- ) \ opens a virtual serial channel
     c4 bkr! bkr! 29 bkr! ;
@@ -70,11 +74,10 @@
     next drop
 ;
 
-
-
-create buffer here 400 allot 400 clear
-
-
+create buffer here 400 allot 400 clear \ for testing
+create rbuffer here 102 allot 102 clear \ for testing
+ 
+    
 : dwTest ( -- )  \ this is a thread
     ." DW test thread started" cr
     dwInit
@@ -84,3 +87,25 @@ create buffer here 400 allot 400 clear
 	buffer dup recvlstr 1 dwVwriteln 
     again
 ;
+
+: dwPoll ( -- b2 b1 ) \ polls dw for input, and gets input.
+    43 bkr! bkrKey bkrKey swap ;
+
+
+: dwReader ( -- ) \ reads and prints data from serial port
+    ." DW reader started" cr
+    begin
+	begin dwPoll dup 0= while 2drop 30 sleep drop repeat
+	dup 10 u< if drop emit else
+	dup 10 =  if 2drop else
+	    11 -   ( len chan )
+	    63 bkr! bkr! dup bkr! ( len )
+	    rbuffer over !+ swap bkrAccept
+	    rbuffer type
+	then then
+again
+;
+
+
+
+    

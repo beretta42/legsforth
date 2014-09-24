@@ -8,7 +8,7 @@ all: forth.img  kernel.txt
 
 forth.img: ../bfc/bfc ../C/legs16 kernel.fs forth2.fs start.fs becker.fs
 	../bfc/bfc -d 4000 -o forth.img start.fs 
-	cat forth2.fs becker.fs | ../C/legs16 -si forth.img
+	cat forth2.fs dwdsk.fs | ../C/legs16 -si forth.img
 
 kernel.txt: kernel.fs
 	grep : kernel.fs > kernel.txt

@@ -1,5 +1,7 @@
 
 : <    2dup xor 0< if drop 0< exit then - 0< ;
+: ?dup ( x -- ? ) \ duplicates TOS if TOS is not zero
+    dup if dup then ;
 
 ( 
 For catch an throw, the saved state frame is as follow:
@@ -48,7 +50,7 @@ are set by the kernel to indicate why a task was woken
 2 constant     WIPC      \   Task's channel woke it
 3 constant     WRIP      \   Death of Child task
 4 constant     WRST      \   Task has been suspended and restarted again
-
+5 constant     WTERM     \   Task has been asked to exit
 
 
 
@@ -92,7 +94,10 @@ create ram RAMZ allot
  char field >OID   \ task's OID
  char field >WAIT  \ OID we're waiting on
  char field >MUT   \ mutex lock on this task
- char field >WAKE  \ why we were woken
+char field >WAKE  \ why we were woken
+cell field >EXITV  \ exit vector of task
+ char field >EFLAG \ exit flag
+\ cell field >MON   \ monitor we're waiting on
 struct task
 
 \ Task States:
@@ -105,6 +110,7 @@ struct task
 2 constant SLEEP
 3 constant WAIT
 4 constant STOP
+\ 5 constant MON
 
 
 40 constant KOBJZ \ size of kernel objects
@@ -267,19 +273,25 @@ create oref KNUM allot
 
 6 variable idle   \ idle's tp
 
+: doexit? ( -- ) \ check flag and execute exit vector
+    tp@ >EFLAG c@ if tp@ >EXITV @ ?dup if exec then then 
+;
+    
+: kyield ( -- a ) \ goes to next task
+    tp@ >NEXT @ dup 0= if
+	drop runners @ dup 0= if drop idle @ then
+    then yieldto doexit?    
+;
 
-: nextt ( -- a ) \ goes to next task
-    tp@ >NEXT @ dup 0= if drop runners @ dup 0= if drop idle @ then then ;
 : nexts ( -- a ) \ goes to next task while sleeping
-    runners @ dup 0= if drop idle @ then yieldto ;  
+    runners @ dup 0= if drop idle @ then yieldto doexit? ;  
 
-: kyield ( -- ) 
-    nextt yieldto ;
 
 : ksleep ( code u -- w ) \ sleep for u jiffies in st state. w is a wake code
-    tp@ >TIMER !
-    tp@ swap tsleep
-    nexts tp@ >WAKE c@ 
+    tp@ >TIMER !                             \ set my timer
+    tp@ swap tsleep                          \ put me into a sleep state
+    nexts                                    \ go to next task
+    tp@ >WAKE c@                             \ get wake tag
 ;
 
 
@@ -450,10 +462,14 @@ These next words are interface to the kernel. They should:
     ioff kyield ion ;
 : sleep ( u -- w ) \ Kern iface: sleep for u ticks
     ioff SLEEP swap ksleep ion ;
+: term ( k -- ) \ ask a task to terminate
+    ioff kderef
+    dup WTERM twake
+    >EFLAG true swap c! ion ;
 : kill ( k -- ) \ kills a task
-    ioff kderef true swap kdestroy
-    ion
-;
+    ioff kderef true swap kdestroy ion ;
+: setexit ( xt -- ) \ set task's exit vector
+    ioff tp@ >EXITV ! ion ;
 
 : listen ( -- ) \ tell waiting clients we're listening
     ioff

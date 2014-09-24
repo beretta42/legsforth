@@ -1,4 +1,5 @@
 : <    2dup xor 0< if drop 0< exit then - 0< ;
+: ?dup ( x -- ? ) \ duplicates TOS if TOS is not zero
 For catch an throw, the saved state frame is as follow:
 : catch ( xt -- e )  \ catch a thrown error
 : throw ( e -- e ) \ Returns in saved context
@@ -34,9 +35,9 @@ For catch an throw, the saved state frame is as follow:
 : kspawn ( s0 xt -- k ) \ spawn a task
 : helper ( u a -- u f )
 : notify ( OID -- )   \ wake all tasks waiting for OID
-: nextt ( -- a ) \ goes to next task
+: doexit? ( -- ) \ check flag and execute exit vector
+: kyield ( -- a ) \ goes to next task
 : nexts ( -- a ) \ goes to next task while sleeping
-: kyield ( -- ) 
 : ksleep ( code u -- w ) \ sleep for u jiffies in st state. w is a wake code
 : owait ( OID -- ) \ go to sleep waiting for OID
 : rel ( OID -- ) \ release a lock
@@ -66,7 +67,9 @@ These next words are interface to the kernel. They should:
 : spawn ( s0 xt -- k ) \ Kern iface: create thread
 : yield ( -- ) \ yield to the kernel
 : sleep ( u -- w ) \ Kern iface: sleep for u ticks
+: term ( k -- ) \ ask a task to terminate
 : kill ( k -- ) \ kills a task
+: setexit ( xt -- ) \ set task's exit vector
 : listen ( -- ) \ tell waiting clients we're listening
 : sendc ( c t -- c ) \ connect to task t sending c, and getting c as reply
 : recvc ( --  c ) \ receive char from a client

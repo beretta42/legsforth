@@ -4,7 +4,9 @@
 
 \ set our dp to end of lastest definition
 latest >name @+ + dp !
-  
+
+c000 cp !  \ compile this forth to e000
+\ f000 dp ! \ compile this forth's dict to f000
 
 : noop    ;				 \ a no operation
 : cr	  d emit ;			 \ prints a cr
@@ -217,7 +219,7 @@ export
    here + cp ! ;
 
 : words latest begin dup while dup >name type space @ repeat drop cr ;
-
+: .w latest 10 for dup >name type space @ next drop cr ;
 
 \ ******************************************
 \ Structures
@@ -337,7 +339,7 @@ export
     0 0	!
     ." LegsOS kernel started" cr
     begin lit interpret catch
-	dup 0< if ." SysErr: " dup .  texit then
+	dup 0< if ." SysErr: " dup .  texit then drop
 	r0 @ rp!
     again
     }} kinit
@@ -349,9 +351,5 @@ d000 dp !
 
 ' launch 0 !
 
-\ interact
-\ bye
-
 interact
 
-done

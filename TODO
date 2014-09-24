@@ -1,2 +1,5 @@
 
-bfc:  make include paths.. (oh boy)!
+bfc:         make include paths.. (oh boy)!
+forth.fs or
+forth2.fs    WNF is reseting but pushing value to stack
+forth2.fs    make backspace actually work.

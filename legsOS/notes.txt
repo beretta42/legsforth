@@ -6,7 +6,7 @@ General Memory Map
 2000  4000  temp stack
 4000  6000  kernel dictionary
 6000  e000  application area  
-e000  ffff  forth interpreter ( task 0 only )
+e000  ffff  forth interpreter
 
 
 
@@ -15,19 +15,13 @@ Kernel
 ***********************************************
 Kernel is a micro kernel
 
-Each task has a 1 byte receive buffer.  Bytes
-are syncronously sent from client tasks to
-server tasks.  The server returns a byte in
-reply.  Atop this simplicity, the kernel can handle the
-passing of kernel objects (threads, or data )
-back and forth between tasks.  send and reply formats:
+IPC
 
-1. send a char, recv a char  - slow as crap!
-2. send a kobj, recv a char  - medium
-3. send a kobj, recv a kobj  - heavy-duty data slug-fest smack-down
-
-
-All of the above can timeout.
+Each task has a 1 byte receive buffer.  Bytes are syncronously sent
+from client tasks.  The server returns a byte in reply.  Atop this
+simplicity, the kernel can handle the passing of kernel objects
+(threads, or data ) back and forth between tasks.  send and reply
+formats:
 
 
 
@@ -46,7 +40,10 @@ simpify.
 kernel.fs: map: make work with removing elements
 make boot up sequence sane ( auto-running forward refed words?)
 merge "forth2.fs" together between projects?
-
+need "dettach" and/or "exec" - to separate a task from it's parent.
+hide helper/unneeded kernel words.
+decide on if lock/release/wait should be kernel functions (supported threads)
+should spawn send argument to thread?
 
 ******************************
 BUG's
@@ -65,26 +62,35 @@ For catch an throw, the saved state frame is as follow:
 ?: catch ( xt -- e )   \ catch a thrown error
 ?: throw ( e -- e )    \ Returns in saved context
 
+*************************************
 Interface Functions
+*************************************
+stack codes:
+u - 16 bit unsigned int
+k - 8 bit unsigned int:  local kernel object ID
+c - 8 bit unsigned int:  global memory block ID
+a - 16 bit address:  
+o - 16 bit unsigned int: global kernel object ID 
+xt- 16 bit address:      execution token ( word address )
 
 : texit   ( u -- )       \ quit a thead, return u to parent
 : waitfor ( k -- u )     \ wait for task u to die, returns u with exit status
 : wait    ( -- k )       \ wait for any child task to die
 : stop    ( k -- )       \ stop a task from running
 : start   ( k -- )       \ wake a task
-: malloc  ( -- b )       \ Kern iface: allocate block memory
-: mfree   ( b -- )       \ Kern iface: free memory
+: malloc  ( -- c )       \ Kern iface: allocate block memory
+: mfree   ( c -- )       \ Kern iface: free memory
 : alloc   ( -- k )       \ Kern iface: allocate kernel object
 : deref   ( k -- a )     \ de-references a kernel reference
 : attach  ( o -- k )     \ attached obj o to task's kernel references
 : close   ( k -- )       \ Kern iface: close kernel object
 : spawn   ( s0 xt -- k ) \ Kern iface: create thread
 : yield   ( -- )         \ yield to the kernel
-: sleep   ( u -- )       \ Kern iface: sleep for u ticks
+: sleep   ( u -- u )     \ Kern iface: sleep for u ticks
 : sendc   ( c k -- c )   \ connect to task k sending c, and getting c as reply
 : recvc   ( --  c )      \ receive char from a client
 : replyc  ( c -- )       \ send reply char back to client
-: kinit   ( xt -- )      \ inits system
+: kinit   ( xt -- )      \ inits the kernel 
 Kernel extension words. Rules:
 : recvmsg ( -- m ) \ recv a message
 : replymsg ( m -- ) \ reply with message
@@ -92,10 +98,7 @@ Kernel extension words. Rules:
 : sendstrc ( ca kid -- c ) \ send a string, get char as reply *WATCHING*
 : sendcmsg ( c t -- m ) \ send c to task t, get m as reply
 : sendmsg ( m t -- m ) \ send a message, get message as reply
-: spallot ( -- a )
 : thread ( xt -- u ) \ creates new task in interpreter
-
-
 
 
 Breaking Kernel functions down in source code.

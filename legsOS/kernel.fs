@@ -2,7 +2,10 @@
 : <    2dup xor 0< if drop 0< exit then - 0< ;
 : ?dup ( x -- ? ) \ duplicates TOS if TOS is not zero
     dup if dup then ;
+: sex ( c -- x ) \ sign extend byte to cell
+    dup 80 and if ff00 or then ;
 
+    
 ( 
 For catch an throw, the saved state frame is as follow:
 low mem ->  <handler>  <SP-2>   -> high mem
@@ -137,11 +140,11 @@ create oref KNUM allot
     
 
 : open ( u -- ) \ (re)Opens block
-    ram + dup c@ 1+ swap c! ; expose
+    1- ram + dup c@ 1+ swap c! ; expose
 : free ( u -- ) \ Closes block
-    ram + dup c@ 1- swap c!  ; expose
-: salloc ( -- u ) \ Get memory block
-     ram dup RAMZ ffz dup if swap - dup open else 2drop true then
+    1- ram + dup c@ 1- swap c!  ; expose
+: salloc ( -- u ) \ Get memory block ( returns 1-65 )
+     ram dup RAMZ ffz dup if swap - 1+ dup open else 2drop true then
      ; expose
 
 
@@ -170,20 +173,33 @@ create oref KNUM allot
     talloc dup 0< if EUMEM throw then  \ find task obj desc
     oalloc dup 0< if EOMEM throw then  \ find kernel obj
     over tderef c! \ assign kernel obj to task's obj table
-    ;  expose 
+;  expose
+: xalloc ( -- k ) \ allocate a ram block
+    talloc dup 0< if EUMEM throw then  \ get a task obj desc
+    salloc dup 0< if EMEM throw then   \ try to alloc memory
+    neg over tderef c! \ assign RAM block to task's obj table
+; expose
 : kderef ( u -- a ) \ find address, a, of kernel object no u.
-    tderef c@ dup 0= if EFD throw then oderef ; expose
+    tderef c@ sex
+    dup 0= if drop EFD throw then
+    dup 0< if drop EFD throw then
+    oderef
+; expose
 : kopen ( u -- ) \ Reopens, increment reference count of object
-    tderef c@ dup 0= if drop exit then oopen ; expose
+    tderef c@ sex
+    dup 0= if drop exit then
+    dup 0< if neg open exit then
+    oopen ; expose
 : kclose ( u -- ) \ Closes, decrements reference count of object
-    tderef dup c@ dup 0= if 2drop exit then
-    oclose false swap c! ; expose
+    tderef dup c@ sex
+    dup 0= if 2drop exit then
+    dup 0< if neg free else oclose then
+    false swap c! ; expose
 : kattach ( o -- u ) \ make local reference to kobj u, return handle
    talloc dup 0< if exit then      \ find task obj desc
    tuck tderef c!                  \ assign obj to task's table
    dup tderef c@ oopen 
 ;
-
 
 
 \ applies xt to each element in linked list stating with 1st.
@@ -247,7 +263,7 @@ create oref KNUM allot
     \ reopen all kobjs here
     0 10 for dup kopen 1+ next drop
     \ reopen all alloced memory here
-    tp@ >MMU tp@ >MZ c@ for dup c@ open 1+ next drop
+\    tp@ >MMU tp@ >MZ c@ for dup c@ open 1+ next drop
 ;
 
 
@@ -293,7 +309,6 @@ create oref KNUM allot
     nexts                                    \ go to next task
     tp@ >WAKE c@                             \ get wake tag
 ;
-
 
 
 : owait ( OID -- ) \ go to sleep waiting for OID
@@ -351,14 +366,17 @@ create oref KNUM allot
 
 : kdestroy ( u a -- ) \ exit task a with return value of u
     swap over >RET !                            \ set return value
-    dup >OBJ 10 for c@+ dup if oclose else drop then next drop   \ close all open objects
-    dup >MMU over >MZ c@ for c@+           \ close memory resources
-    free next drop		
+    0 10 for dup kclose 1+ next drop            \ close all resources
+\    dup >OBJ 10 for c@+ dup if oclose else drop then next drop   \ close all open objects
+\   dup >MMU over >MZ c@ for c@+           \ close memory resources
+\    free next drop		
     0 over >TIMER !   		   	   \ turn off timer
     dup >PAR c@ dup if oderef WRIP twake else drop then        \ wake my parent
     dup ZOMBIE tsleep                      \ put on sleeping lists
     drop
 ;
+ 
+
 
 
 
@@ -524,7 +542,7 @@ on alloc'ed memory
     ioff
     push
     true tp@ >PAR c!                     \ set an impossible parent
-    0 open 1 open			 \ set kernel's memory allocation
+    xalloc drop xalloc drop              \ allocate kernel RAM
     tp@ sleepers !			 \ add as sleeper task 		 
     2 tp@ >MZ c!   	   	   	 \ set allocd mmu to 2
     lit interrupt 2 !			 \ set timer interrupt handlers

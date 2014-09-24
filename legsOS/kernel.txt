@@ -1,5 +1,6 @@
 : <    2dup xor 0< if drop 0< exit then - 0< ;
 : ?dup ( x -- ? ) \ duplicates TOS if TOS is not zero
+: sex ( c -- x ) \ sign extend byte to cell
 For catch an throw, the saved state frame is as follow:
 : catch ( xt -- e )  \ catch a thrown error
 : throw ( e -- e ) \ Returns in saved context
@@ -9,7 +10,7 @@ For catch an throw, the saved state frame is as follow:
     Kernel internel words. RULES:
 : open ( u -- ) \ (re)Opens block
 : free ( u -- ) \ Closes block
-: salloc ( -- u ) \ Get memory block
+: salloc ( -- u ) \ Get memory block ( returns 1-65 )
 : oderef ( u -- a ) \ dereference obj to an address
 : a2o ( a -- u ) \ changes address to Object ID
 : oopen ( u -- ) \ opens an object
@@ -18,6 +19,7 @@ For catch an throw, the saved state frame is as follow:
 : talloc ( -- u | -1 ) \ allocate a task's object table entry, but dont commit.
 : tderef ( u -- a ) \ deference task obj's ref to address
 : kalloc ( -- u | -1 ) \ allocate kernel object
+: xalloc ( -- k ) \ allocate a ram block
 : kderef ( u -- a ) \ find address, a, of kernel object no u.
 : kopen ( u -- ) \ Reopens, increment reference count of object
 : kclose ( u -- ) \ Closes, decrements reference count of object

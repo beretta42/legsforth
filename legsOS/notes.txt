@@ -13,17 +13,15 @@ e000  ffff  forth interpreter
 ***********************************************
 Kernel
 ***********************************************
-Kernel is a micro kernel
+Kernel is limited exo-kernel
 
-IPC
+Kernel will only protect whats needed to protect itself.
+or anything the kernel uses.....
 
-Each task has a 1 byte receive buffer.  Bytes are syncronously sent
-from client tasks.  The server returns a byte in reply.  Atop this
-simplicity, the kernel can handle the passing of kernel objects
-(threads, or data ) back and forth between tasks.  send and reply
-formats:
+RAM  - bankable ram
+KOBJ - kernel objects 
 
-
+other devices are left to direct IO to the tasks.
 
 
 *****************************

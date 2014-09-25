@@ -46,7 +46,9 @@ should spawn send argument to thread?
 ******************************
 BUG's
 ******************************
-- Random locking of system???
+- Theoretical DW speed over a 115200 line is about 10155 Bps,
+  our imp only acheives 1920 Bps... only 18 % efficiency..
+
 
 *************************************
 LOG

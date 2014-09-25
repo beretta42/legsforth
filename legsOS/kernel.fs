@@ -97,8 +97,8 @@ create ram RAMZ allot
  char field >OID   \ task's OID
  char field >WAIT  \ OID we're waiting on
  char field >MUT   \ mutex lock on this task
-char field >WAKE  \ why we were woken
-cell field >EXITV  \ exit vector of task
+ char field >WAKE  \ why we were woken
+ cell field >EXITV  \ exit vector of task
  char field >EFLAG \ exit flag
 \ cell field >MON   \ monitor we're waiting on
 struct task
@@ -293,13 +293,13 @@ create oref KNUM allot
     tp@ >EFLAG c@ if tp@ >EXITV @ ?dup if exec then then 
 ;
     
-: kyield ( -- a ) \ goes to next task
+: kyield ( -- ) \ goes to next task
     tp@ >NEXT @ dup 0= if
 	drop runners @ dup 0= if drop idle @ then
     then yieldto doexit?    
 ;
 
-: nexts ( -- a ) \ goes to next task while sleeping
+: nexts ( -- ) \ goes to next task while sleeping
     runners @ dup 0= if drop idle @ then yieldto doexit? ;  
 
 
@@ -376,8 +376,6 @@ create oref KNUM allot
     drop
 ;
  
-
-
 
 
 (
@@ -458,7 +456,6 @@ These next words are interface to the kernel. They should:
 
 : start ( kid -- ) \ wake a task
     ioff kderef WRST twake ion ;
-
 
 
 

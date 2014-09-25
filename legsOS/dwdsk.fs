@@ -21,7 +21,8 @@
     ff41 p@ ;
 
 : bkrKey ( -- c )  \ wait for key and return it 
-   begin bkr? until ff42 p@ ;
+    \    begin bkr? 0= while 2 sleep drop repeat ff42 p@ ;
+    begin bkr? until ff42 p@ ;
 
 : bkrAccept ( a u -- ) \ accept u bytes from becker port into buffer
     for bkrKey c!+ next drop ;
@@ -48,12 +49,21 @@
 create dargs 4 allot
 0 variable cksum
 
-: dwRead ( a -- f ) \ read secter into buffer a	 
+: dwRead ( a -- f ) \ read sector into buffer	 
     d2 bkr! dargs 4 bkrSend
     dup 100 bkrAccept
     0 cksum !
     100 for c@+ cksum +! next drop
     cksum dup c@ bkr! 1+ c@ bkr!
+    bkrKey
+;
+
+
+: dwWrite ( a -- f ) \ write buffer to disk
+    57 bkr! dargs 4 bkrSend
+    0 cksum !
+    100 for c@+ dup cksum +! bkr! next drop
+    cksum c@+ bkr! c@+ bkr! drop
     bkrKey
 ;
 

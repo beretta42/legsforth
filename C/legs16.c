@@ -418,7 +418,7 @@ void key(){
 void emit(){
   char c=mpop();
   if( c=='\r' ) c='\n' ;
-  if( !noemit ) write( 1, &c, 1);
+  if( !noemit ) write( 2, &c, 1);
 }
 
 void bye(){
@@ -476,7 +476,8 @@ void iwait(){
   int ret;
   FD_ZERO( &r );
   FD_SET( 0, &r);
-  FD_ZERO( &r );
+  FD_SET( sock, &r );
+  FD_ZERO( &w );
   FD_SET( 1, &w);
   t.tv_sec=0;
   t.tv_usec=8000;

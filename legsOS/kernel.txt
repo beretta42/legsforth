@@ -38,8 +38,8 @@ For catch an throw, the saved state frame is as follow:
 : helper ( u a -- u f )
 : notify ( OID -- )   \ wake all tasks waiting for OID
 : doexit? ( -- ) \ check flag and execute exit vector
-: kyield ( -- a ) \ goes to next task
-: nexts ( -- a ) \ goes to next task while sleeping
+: kyield ( -- ) \ goes to next task
+: nexts ( -- ) \ goes to next task while sleeping
 : ksleep ( code u -- w ) \ sleep for u jiffies in st state. w is a wake code
 : owait ( OID -- ) \ go to sleep waiting for OID
 : rel ( OID -- ) \ release a lock

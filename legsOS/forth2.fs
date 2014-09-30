@@ -249,7 +249,8 @@ export
     dup 2 = if ." SLEEP " else
     dup 3 = if ." WAIT  " else
     dup 4 = if ." STOP  " else
-    then then then then then
+    dup 5 = if ." MON   " else	    
+    then then then then then then
     drop
 ;
 
@@ -259,8 +260,8 @@ export
      ." OID   " dup >OID c@ u. cr
      ." PAR   " dup >PAR c@ u. cr
      ." ST    "  dup >ST c@ .st cr
-     ." CST   " dup >CST c@ u. cr
-     ." WAIT  " dup >WAIT c@ u. cr
+\     ." CST   " dup >CST c@ u. cr
+\     ." WAIT  " dup >WAIT c@ u. cr
      ." TIMER " dup >TIMER @ u. cr
      ." SP    " dup >SP @ u. cr
      ." RP    " dup >RP @ u. cr
@@ -275,8 +276,8 @@ export
      dup >OID c@  bemit space
      dup >PAR c@  bemit space
      dup >ST c@  .st    space
-     dup >CST c@  bemit space
-     dup >WAIT c@ bemit space
+\     dup >CST c@  bemit space
+\     dup >WAIT c@ bemit space
      dup >TIMER @ wemit space
      cr drop false
 ;
@@ -327,9 +328,12 @@ export
 
 : sleepy {{ begin 80 sleep drop again }} thread ; 
 : ichy {{ begin 200 sleep drop ." tick!" cr again }} thread ; 
+
+(
 : verby {{ listen begin recvc
 	." The Byte of your choosing is: " bemit cr
 	42 replyc again }} thread ;
+)
 
 : launch
     {{

@@ -91,16 +91,13 @@ create ram RAMZ allot
  cell field >RET   \ return value of task
  char field >ST	   \ state of task ( why we're sleeping )
  cell field >TIMER \ kernel timeout
- char field >MID   \ message ID
- char field >CST   \ channel state
  char field >PAR   \ Parent's OID
  char field >OID   \ task's OID
- char field >WAIT  \ OID we're waiting on
- char field >MUT   \ mutex lock on this task
  char field >WAKE  \ why we were woken
  cell field >EXITV  \ exit vector of task
  char field >EFLAG \ exit flag
-\ cell field >MON   \ monitor we're waiting on
+ cell field >MON   \ address monitor we're waiting on
+ cell field >MNEXT \ next in the list of waiter on this monitor
 struct task
 
 \ Task States:
@@ -108,12 +105,12 @@ struct task
 \  sleeping list, not just SLEEP.
 
 
-0 constant RUN
-1 constant ZOMBIE
-2 constant SLEEP
-3 constant WAIT
-4 constant STOP
-\ 5 constant MON
+0 constant RUN          \ We're CPU Bound
+1 constant ZOMBIE       \ Dead - waiting waiting for "waitfor"
+2 constant SLEEP        \ just waiting on jiffy timer
+3 constant WAIT         \ waiting for a child task to die
+4 constant STOP         \ we've been externally stopped
+5 constant MON          \ waiting on a monitor
 
 
 40 constant KOBJZ \ size of kernel objects
@@ -231,7 +228,7 @@ create oref KNUM allot
    drop ;
 
 
-: zexit ( a code -- ) \ exit the next to words if this task is a zombie
+: zexit ( a code -- ) \ exit if this task is a zombie
     over >ST c@ ZOMBIE - if exit then 2drop pull drop exit ; hide
 
 : tsleep ( a code -- )    \ send task to sleep list
@@ -267,22 +264,6 @@ create oref KNUM allot
 ;
 
 
-
-: helper ( u a -- u f )
-   >WAIT c@ over = if true else false then ;
-
-: notify ( OID -- )   \ wake all tasks waiting for OID
-    begin
-	lit helper sleepers @ map dup ( u a )
-    while
-	    dup WIPC twake       \ wake the task
-	    0 swap >WAIT c!      \ reset it's wait status
-    repeat
-    2drop
-;
-
-
-
 \ kernel used this task as the
 \ idle task -  one that runs when
 \ there is no others runnable
@@ -309,29 +290,6 @@ create oref KNUM allot
     nexts                                    \ go to next task
     tp@ >WAKE c@                             \ get wake tag
 ;
-
-
-: owait ( OID -- ) \ go to sleep waiting for OID
-   tp@ >WAIT c! WAIT 0 ksleep drop ;
-
-: rel ( OID -- ) \ release a lock
-   0 swap oderef >MUT c! ;
-
-: lock ( OID ) \ obtain lock on OID
-     begin dup oderef >MUT c@ while dup owait repeat
-    1 swap oderef >MUT c! ;
-
-: release ( OID ) \ release lock on OID
-    dup rel notify  ;
-
-: relwait ( OID ) \ release lock and wait on 
-     dup rel dup notify owait  ;
-
-: CSTwait ( c OID -- ) \ wait until OID  value is c, leave locked
-    begin dup lock 2dup oderef >CST c@ - while dup relwait repeat 2drop ;
-
-: myid ( -- OID ) \ my Object ID
-    tp@ >OID c@ ;
 
 
 
@@ -367,15 +325,46 @@ create oref KNUM allot
 : kdestroy ( u a -- ) \ exit task a with return value of u
     swap over >RET !                            \ set return value
     0 10 for dup kclose 1+ next drop            \ close all resources
-\    dup >OBJ 10 for c@+ dup if oclose else drop then next drop   \ close all open objects
-\   dup >MMU over >MZ c@ for c@+           \ close memory resources
-\    free next drop		
-    0 over >TIMER !   		   	   \ turn off timer
+    0 over >TIMER !   		   	        \ turn off timer
     dup >PAR c@ dup if oderef WRIP twake else drop then        \ wake my parent
-    dup ZOMBIE tsleep                      \ put on sleeping lists
+    dup ZOMBIE tsleep                           \ put on sleeping lists
     drop
 ;
- 
+
+\ 
+\ Task Locking
+\ 
+
+: lwait ( a -- ) \ wait on this monitor until notified
+    tp@ MON tsleep                           \ put myself to sleep
+    dup char+ @ swap                          \ put old list head on stack
+    tp@ swap char+ !                          \ make me the new 1st
+    tp@ >MNEXT !                              \ get link of mutex head
+    nexts                                     \ run the next task
+;
+
+: notify ( a -- ) \ wake up all tasks on monitor
+    char+ dup @ swap 0 swap !
+    begin ?dup while
+	    dup >MNEXT @ swap
+	    WIPC twake
+    repeat
+;
+
+: lrel ( a -- ) \ release a monitor
+    0 swap c!
+;
+    
+: lock ( a -- ) \ lock monitor a, returns a wake reason
+    ioff begin dup c@ while dup lwait repeat
+    true swap c! ion
+;
+
+: release ( a -- ) \ release monitor
+    ioff dup lrel notify ion ;
+
+: waiton ( a -- ) \ wait on a monitor ( releases lock and waits )
+    ioff dup dup lrel notify lwait ion ;
 
 
 (
@@ -390,24 +379,23 @@ These next words are interface to the kernel. They should:
 
 : texit ( u -- )  \ exit task with return value of U
     ioff
-    myid lock                           \ wait for lock
     tp@ kdestroy                        \ destroy me
-    myid release                        \ release lock, wake all waiting
     nexts                               
 ;
 
 
 : waitfor ( kid -- u ) \ wait for task u to die, returns u with exit status
     ioff
-    dup kderef a2o dup lock                    \ wait for thread lock
     \ wait for zombie state
-    begin over kderef >ST c@ ZOMBIE - while dup relwait repeat ( k o )
+    begin dup kderef >ST c@ ZOMBIE - while tp@ SLEEP nexts repeat ( k )
     \ get task's return
-    push dup kderef dup >RET @ -rot ( ret k a )
+    dup kderef >RET @ swap ( u k )
     \ remove tasklisk, unlock task
-    unlink kclose pull release
+    dup kderef unlink kclose
     ion
 ;
+ 
+
 
 
 \ where does this belong?
@@ -436,7 +424,7 @@ These next words are interface to the kernel. They should:
 : wait ( -- kid ) \ wait for any child task to die
     ioff
     \ scan through sleepers
-    myid
+    tp@ >OID c@
     begin 
 	lit helper sleepers @ map dup 0= 
     while 
@@ -486,49 +474,6 @@ These next words are interface to the kernel. They should:
 : setexit ( xt -- ) \ set task's exit vector
     ioff tp@ >EXITV ! ion ;
 
-: listen ( -- ) \ tell waiting clients we're listening
-    ioff
-    0 myid CSTwait
-    1 tp@ >CST c!
-    myid release
-    ion
-;
-
-
-: sendc ( c t -- c ) \ connect to task t sending c, and getting c as reply
-    ioff
-    kderef push
-    \ send a char
-    1 r@ a2o CSTwait       \ wait till semaphore is 1 (server listening)
-    r@ >MID c!             \ set char
-    2 r@ >CST c!           \ set CST to 2  ( client connect )
-    r@ a2o release         \ release lock
-    \ wait for reply
-    3 r@ a2o CSTwait       \ wait till semaphore is 3 (server responded )
-    r@ >MID c@             \ retrieve server's char
-    1 r@ >CST c!           \ reset semaphore ( no client )
-    pull a2o release       \ release lock
-    ion
-;
-
-
-: recvc ( --  c ) \ receive char from a client
-    ioff
-    2 myid CSTwait     \ wait till semaphore is 2
-    tp@ >MID c@        \ get byte
-    myid release       \ release lock
-    ion
-;
-
-: replyc ( c -- ) \ send reply char back to client
-    ioff
-    myid lock
-    tp@ >MID c!		  \ set data
-    3 tp@ >CST c!         \ set CST to 3 (server is responded)
-    myid release
-    ion
-;
-
 
 ( 
 kinit doesn't clr key kernel tables... it should.
@@ -561,29 +506,6 @@ Kernel extension words. Rules:
     2. they never should call any thing above the interface words above.
 **************************************************************
 )
-
-: recvmsg ( -- m ) \ recv a message
-    recvc attach ;
-
-: replymsg ( m -- ) \ reply with message
-    tderef c@ replyc ;
-
-: sendmsgc ( m t -- c ) \ send a message, get char as reply
-    push tderef c@ pull sendc ;
-
- 
-
-: sendstrc ( ca kid -- c ) \ send a string, get char as reply *WATCHING*
-    push alloc dup push deref over @ !+ swap @+ mv
-    pull dup pull sendmsgc swap close
-;
-
-: sendcmsg ( c t -- m ) \ send c to task t, get m as reply
-    sendc attach ;
-
-: sendmsg ( m t -- m ) \ send a message, get message as reply
-    push tderef c@ pull sendcmsg ;
-
 
 
 \ stack allocation pointer

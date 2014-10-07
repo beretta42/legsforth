@@ -115,17 +115,19 @@ create vpdata here a0 allot a0 clear
 
 
 : dwReader ( -- ) \ reader thread for dwVports
+    {{ ." dwReader termed" cr 0 texit }} setexit
     begin
 	\ wait tills there's something to do
 	begin dwPoll dup 0= while 2drop 20 sleep drop repeat ( b2 b1 )
 	dup 10 - if
-	dup vpconv lock
-	\ wait for empty buffer
-	dup vpconv >VPBYTES begin dup c@ while over vpconv waiton repeat drop
-	\ save data to buffer
-	tuck dup vpconv >VPBYTES swap c!+ c! \ ( b1 )
-	vpconv release
-	3 sleep drop
+	    dup vpconv lock
+	    \ wait for empty buffer
+	    dup vpconv >VPBYTES begin dup c@ while
+		    over vpconv waiton repeat drop
+	    \ save data to buffer
+	    tuck dup vpconv >VPBYTES swap c!+ c! \ ( b1 )
+	    vpconv release
+	    3 sleep drop
 	else 2drop then
     again
 ;
@@ -147,26 +149,47 @@ create vpdata here a0 allot a0 clear
 ;
 
 
-
 create testb 102 allot
-    
+
+1 variable portv
+: port portv @ ;
+
 : test
-    begin testb cell+ 1 dwAccept testb ! testb type again
+    {{ ." test termed" cr 0 texit }} setexit
+    begin testb cell+ port dwAccept testb ! testb type again
 ;
 
-
 : test2
-    begin key
+    begin
+	ekey 
 	dup 7e = if drop exit then
-	1 dwVput
+	dup port dwVput
+	\	d = if exit then
+	drop
+    again
+;
+
+create termerb 102 allot
+
+: termer ( -- ) \ task to setup terminals on port 6809
+    1 dwVopen
+    {{ 1 dwVclose 0 texit }} setexit
+    s" tcp listen 6809" 1 dwVwriteln
+    termerb cell+ 1 dwAccept termerb !
+    begin
+	termerb cell+ 1 dwAccept termerb !
     again
 ;
 
 : init
     dwReset
     lit dwReader thread .
-    lit test thread .
-    1 dwVopen
-    s" dw" 1 dwVwriteln
+    lit termer thread .
+ ;
 
+: dw
+    port dwVopen
+    d parse dup type port dwVwriteln
 ;
+
+

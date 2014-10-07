@@ -344,6 +344,13 @@ export
     }} kinit
 ;
 
+: imips ( -- u ) \ ticks it takes for ~16,000,000 loops
+    ticks @ 100 for ffff for next next ticks @ swap -
+;
+
+
+
+
 
 6000 cp !
 d000 dp !

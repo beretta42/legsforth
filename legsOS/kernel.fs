@@ -335,6 +335,15 @@ create oref KNUM allot
 \ Task Locking
 \ 
 
+(
+Locking requires a shared monitor structure from each task
+using the monitor.  It's structure is trivial:
+
+0   1   flag - weather monitor is locked
+1   2   head - points to first task waiting on this lock
+)
+
+
 : lwait ( a -- ) \ wait on this monitor until notified
     tp@ MON tsleep                           \ put myself to sleep
     dup char+ @ swap                          \ put old list head on stack
@@ -354,18 +363,21 @@ create oref KNUM allot
 : lrel ( a -- ) \ release a monitor
     0 swap c!
 ;
-    
-: lock ( a -- ) \ lock monitor a, returns a wake reason
-    ioff begin dup c@ while dup lwait repeat
-    true swap c! ion
+
+: klock ( a -- ) \ lock monitor a
+    begin dup c@ while dup lwait repeat
+    true swap c!
+;
+
+: lock ( a -- ) \ lock monitor a
+    ioff klock ion
 ;
 
 : release ( a -- ) \ release monitor
     ioff dup lrel notify ion ;
 
 : waiton ( a -- ) \ wait on a monitor ( releases lock and waits )
-    ioff dup dup lrel notify lwait ion ;
-
+    ioff dup dup dup lrel notify lwait klock ion ;
 
 (
 ************************************************

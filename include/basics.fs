@@ -19,7 +19,10 @@
 : c!+   over c! char+ ;    	     	\ cstores and inc. a
 : @+    dup cell+ swap @ ; ( a -- a x ) \ fetches and inc. address
 : c@+   dup char+ swap c@ ; 	      	\ cfetches and inc. address
-
+: r1@ ( -- x )                          \ fetches the 2nd item on return stack
+    rp@ cell+ cell+ @ ;
+: r2@ ( -- x )                          \ fetches the 3rd item on return stack
+    rp@ cell+ cell+ cell+ @ ;
 : 0=	if 0 else -1 then ;		\ tests for 0
 : 0<    mint and if -1 else 0 then ; 	\ tests for negative
 : neg	com 1+ ;			\ negate

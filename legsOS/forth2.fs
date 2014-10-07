@@ -329,11 +329,6 @@ export
 : sleepy {{ begin 80 sleep drop again }} thread ; 
 : ichy {{ begin 200 sleep drop ." tick!" cr again }} thread ; 
 
-(
-: verby {{ listen begin recvc
-	." The Byte of your choosing is: " bemit cr
-	42 replyc again }} thread ;
-)
 
 : launch
     {{

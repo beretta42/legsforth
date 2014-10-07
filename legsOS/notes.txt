@@ -118,6 +118,14 @@ interface zone: int are on, turn them off, don't call other iface zone words.
 public libs: int are on, stay on.
 
 
+Sleeping and Waking
+
+
+
+
+
+
+
 all IPC messages are sent via three primitives:
 
 sendc ( c k -- c ) \ send c to thread k, returns c from other thread
@@ -125,3 +133,6 @@ recvc ( -- c )     \ server: receive c from any thread
 replyc ( c -- )    \ server: send reply c back to client thread
 
 On top of this can be constructed ever more elaborate means of IPC.
+
+
+

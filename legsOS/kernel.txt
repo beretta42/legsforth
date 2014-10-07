@@ -1,6 +1,8 @@
 : <    2dup xor 0< if drop 0< exit then - 0< ;
 : ?dup ( x -- ? ) \ duplicates TOS if TOS is not zero
 : sex ( c -- x ) \ sign extend byte to cell
+: cell- cell - ;
+: -! ( a x -- a ) \ push a software stack
 For catch an throw, the saved state frame is as follow:
 : catch ( xt -- e )  \ catch a thrown error
 : throw ( e -- e ) \ Returns in saved context
@@ -34,7 +36,8 @@ For catch an throw, the saved state frame is as follow:
 : zexit ( a code -- ) \ exit if this task is a zombie
 : tsleep ( a code -- )    \ send task to sleep list
 : twake ( a code -- ) \ wake task, a, with wake code
-: kspawn ( s0 xt -- k ) \ spawn a task
+: kspawn ( i*j s0 xt -- k ) \ spawn a task
+    kalloc dup push kderef ( r: k s0 xt a )
 : doexit? ( -- ) \ check flag and execute exit vector
 : kyield ( -- ) \ goes to next task
 : nexts ( -- ) \ goes to next task while sleeping

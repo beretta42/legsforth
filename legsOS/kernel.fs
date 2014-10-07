@@ -4,7 +4,9 @@
     dup if dup then ;
 : sex ( c -- x ) \ sign extend byte to cell
     dup 80 and if ff00 or then ;
-
+: cell- cell - ;
+: -! ( a x -- a ) \ push a software stack
+    swap cell- tuck ! ;
     
 ( 
 For catch an throw, the saved state frame is as follow:
@@ -249,19 +251,20 @@ create oref KNUM allot
 
 
 
-: kspawn ( s0 xt -- k ) \ spawn a task
-    kalloc dup push kderef
-    dup tp@ task mv
-    swap !+ over !+ swap 80 - !+ 1 c!+ drop pull  ( k )
+: kspawn ( i*j s0 xt -- k ) \ spawn a task
+    kalloc dup push kderef ( r: k s0 xt a )
+    dup tp@ task mv 
+    swap !+ over !+ swap 80 - ( a sp )
+    sp@ 4 + @ -!
+    !+ 1 c!+ drop pull  ( k )
     dup kderef runners @ over >NEXT ! runners !
     dup kderef >ST RUN swap c!
     tp@ >OID c@ over kderef >PAR c!
     dup kderef a2o over kderef >OID c!
     \ reopen all kobjs here
     0 10 for dup kopen 1+ next drop
-    \ reopen all alloced memory here
-\    tp@ >MMU tp@ >MZ c@ for dup c@ open 1+ next drop
 ;
+
 
 
 \ kernel used this task as the

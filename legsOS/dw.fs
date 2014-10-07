@@ -184,7 +184,7 @@ create termerb 102 allot
 : init
     dwReset
     lit dwReader thread .
-    lit termer thread .
+    42 lit termer thread .
  ;
 
 : dw

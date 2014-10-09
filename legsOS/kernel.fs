@@ -52,7 +52,7 @@ Wake codes
 are set by the kernel to indicate why a task was woken
 )
 1 constant     WTO       \   Task timed-out     
-2 constant     WIPC      \   Task's channel woke it
+2 constant     WMON      \   Task's channel woke it
 3 constant     WRIP      \   Death of Child task
 4 constant     WRST      \   Task has been suspended and restarted again
 5 constant     WTERM     \   Task has been asked to exit
@@ -252,7 +252,7 @@ create oref KNUM allot
 
 
 : kspawn ( i*j s0 xt -- k ) \ spawn a task
-    kalloc dup push kderef ( r: k s0 xt a )
+    kalloc dup push kderef ( r: k  s: s0 xt a )
     dup tp@ task mv 
     swap !+ over !+ swap 80 - ( a sp )
     sp@ 4 + @ -!
@@ -347,19 +347,20 @@ using the monitor.  It's structure is trivial:
 )
 
 
-: lwait ( a -- ) \ wait on this monitor until notified
+: lwait ( a -- w ) \ wait on this monitor until notified
     tp@ MON tsleep                           \ put myself to sleep
     dup char+ @ swap                          \ put old list head on stack
     tp@ swap char+ !                          \ make me the new 1st
     tp@ >MNEXT !                              \ get link of mutex head
     nexts                                     \ run the next task
+    tp@ >WAKE c@                              \ get wake code
 ;
 
 : notify ( a -- ) \ wake up all tasks on monitor
     char+ dup @ swap 0 swap !
     begin ?dup while
 	    dup >MNEXT @ swap
-	    WIPC twake
+	    WMON twake
     repeat
 ;
 
@@ -367,20 +368,40 @@ using the monitor.  It's structure is trivial:
     0 swap c!
 ;
 
-: klock ( a -- ) \ lock monitor a
-    begin dup c@ while dup lwait repeat
-    true swap c!
+: klock ( a -- w ) \ lock monitor a
+    begin dup c@ while
+	    begin
+		dup lwait
+		dup WTO = if nip exit then
+		WMON =
+	    until
+    repeat
+    true swap c! false
 ;
 
-: lock ( a -- ) \ lock monitor a
+
+: lock ( a -- w ) \ lock monitor a
     ioff klock ion
 ;
 
 : release ( a -- ) \ release monitor
     ioff dup lrel notify ion ;
 
-: waiton ( a -- ) \ wait on a monitor ( releases lock and waits )
-    ioff dup dup dup lrel notify lwait klock ion ;
+: waiton ( a -- w ) \ wait on a monitor ( releases lock and waits )
+    ioff
+    dup lrel
+    dup notify
+    begin
+	dup lwait
+	dup WTO = if nip ion exit then
+	WMON =
+    until
+    klock
+    ion 
+;
+
+
+
 
 (
 ************************************************
@@ -488,6 +509,8 @@ These next words are interface to the kernel. They should:
     ioff kderef true swap kdestroy ion ;
 : setexit ( xt -- ) \ set task's exit vector
     ioff tp@ >EXITV ! ion ;
+: to! ( u -- ) \ set task's time out timer
+    ioff tp@ >TIMER ! ion ;
 
 
 ( 

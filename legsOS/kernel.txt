@@ -37,7 +37,7 @@ For catch an throw, the saved state frame is as follow:
 : tsleep ( a code -- )    \ send task to sleep list
 : twake ( a code -- ) \ wake task, a, with wake code
 : kspawn ( i*j s0 xt -- k ) \ spawn a task
-    kalloc dup push kderef ( r: k s0 xt a )
+    kalloc dup push kderef ( r: k  s: s0 xt a )
 : doexit? ( -- ) \ check flag and execute exit vector
 : kyield ( -- ) \ goes to next task
 : nexts ( -- ) \ goes to next task while sleeping
@@ -47,13 +47,13 @@ For catch an throw, the saved state frame is as follow:
 : newkey
 : kdestroy ( u a -- ) \ exit task a with return value of u
 using the monitor.  It's structure is trivial:
-: lwait ( a -- ) \ wait on this monitor until notified
+: lwait ( a -- w ) \ wait on this monitor until notified
 : notify ( a -- ) \ wake up all tasks on monitor
 : lrel ( a -- ) \ release a monitor
-: klock ( a -- ) \ lock monitor a
-: lock ( a -- ) \ lock monitor a
+: klock ( a -- w ) \ lock monitor a
+: lock ( a -- w ) \ lock monitor a
 : release ( a -- ) \ release monitor
-: waiton ( a -- ) \ wait on a monitor ( releases lock and waits )
+: waiton ( a -- w ) \ wait on a monitor ( releases lock and waits )
 These next words are interface to the kernel. They should:
 : texit ( u -- )  \ exit task with return value of U
 : waitfor ( kid -- u ) \ wait for task u to die, returns u with exit status
@@ -74,6 +74,7 @@ These next words are interface to the kernel. They should:
 : term ( k -- ) \ ask a task to terminate
 : kill ( k -- ) \ kills a task
 : setexit ( xt -- ) \ set task's exit vector
+: to! ( u -- ) \ set task's time out timer
 : kinit ( xt -- ) \ inits system
 Kernel extension words. Rules:
 : spallot ( -- a )

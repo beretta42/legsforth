@@ -9,11 +9,11 @@ create dwMon ( -- a ) \ the DW lock/monitor
 0 c, 0 ,
 
 : dwLock ( -- ) \ obtain a drivewire lock
-    dwMon lock ;
+    dwMon lock drop ;
 : dwRel ( -- ) \ release a drivewire lock
     dwMon release ;
 : dwWait ( -- ) \ release but wait on lock
-    dwMon lrel ;
+    dwMon waiton drop ;
 
 : dw! ( c -- ) \ emits a byte to the becker port
     ff42 p!
@@ -119,77 +119,113 @@ create vpdata here a0 allot a0 clear
     begin
 	\ wait tills there's something to do
 	begin dwPoll dup 0= while 2drop 20 sleep drop repeat ( b2 b1 )
-	dup 10 - if
-	    dup vpconv lock
-	    \ wait for empty buffer
-	    dup vpconv >VPBYTES begin dup c@ while
-		    over vpconv waiton repeat drop
-	    \ save data to buffer
-	    tuck dup vpconv >VPBYTES swap c!+ c! \ ( b1 )
-	    vpconv release
-	    3 sleep drop
-	else 2drop then
+	\ 2dup u. space u. cr
+	\ lock vp table entry
+	dup vpconv lock drop
+	\ if special command then skip
+	dup 10 = if nip else
+	\ if entry is full then skip
+	dup vpconv >VPBYTES c@ if nip else
+	\ save data to buffer
+	tuck dup vpconv >VPBYTES swap c!+ c!
+	then then ( b1 )
+	vpconv release 20 sleep drop
     again
 ;
 
 
 : dwAccept ( a vport -- u ) \ returns u bytes of data from vport in a
     dup push dup shl shl + vpdata + push ( r: v va )
-    r@ lock
+    r@ lock drop
     \ wait till there's data
-    r@ >VPBYTES begin dup c@ 0= while r@ waiton repeat ( a @byte1 )
+    r@ >VPBYTES begin dup c@ 0= while r@ waiton drop repeat ( a @byte1 )
     \ if multibyte then get bytes
     dup c@ 10 and if
 	1+ c@ tuck r1@ dwVread
     else
 	1+ c@ swap c! 1
     then
-    0 r@ >VPBYTES c!
+    0 r@ >VPBYTES  c!
     pull release pull drop
+;
+
+
+
+create vstable here 14 allot 14 clear
+create vsmon 0 c, 0 ,
+
+: vsAlloc ( -- u ) \ allocate unused virtual serial port
+    vsmon lock drop
+    vstable 14 ffz true over c! vstable - 2 +
+    vsmon release 
+;
+
+: vsRelease ( u -- ) \ release virtual serial port
+    vsmon lock drop
+    2 - vstable + false swap c!
+    vsmon release
 ;
 
 
 create testb 102 allot
 
-1 variable portv
-: port portv @ ;
-
-: test
-    {{ ." test termed" cr 0 texit }} setexit
-    begin testb cell+ port dwAccept testb ! testb type again
-;
-
 : test2
     begin
-	ekey 
-	dup 7e = if drop exit then
-	dup port dwVput
-	\	d = if exit then
-	drop
+	vsAlloc push
+	r@ dwVopen
+	begin
+	    ekey 
+	    dup 7e = if drop pull vsRelease exit then
+	    dup r@ dwVput
+	    d = 
+	until
+	testb cell+ r@  dwAccept  testb !
+	testb type
+	pull vsRelease
+    again
+;
+
+
+
+: echo ( vport -- )
+    s" LegOS Term Server" over dwVwriteln
+    begin
+	testb cell+ over dwAccept testb !
+	testb type
     again
 ;
 
 create termerb 102 allot
 
 : termer ( -- ) \ task to setup terminals on port 6809
-    1 dwVopen
-    {{ 1 dwVclose 0 texit }} setexit
-    s" tcp listen 6809" 1 dwVwriteln
-    termerb cell+ 1 dwAccept termerb !
+    1 dwVopen                               \ open port1 for control
+    {{ ." termer termed"
+    cr 1 dwVclose 0 texit }} setexit        \ do this on exit 
+    s" tcp listen 6809" 1 dwVwriteln        \ send a listen message
+    termerb cell+ 1 dwAccept termerb !      \ get response
+    termerb type
+    termerb cell+ 1 dwAccept termerb !      \ get response
+    termerb type
     begin
-	termerb cell+ 1 dwAccept termerb !
+	termerb cell+ 1 dwAccept termerb !    \ get connect message
+	termerb type
+	2 termerb !                           \ set new size
+	termerb type
+	vsAlloc dup dwVopen                   \ open new port
+	s" tcp join " over dwVwrite           \ send join command
+	termerb over dwVwriteln
+	termerb cell+ over dwAccept termerb ! \ get response
+	termerb type
+	lit echo thread drop drop
     again
 ;
 
+
 : init
     dwReset
-    lit dwReader thread .
-    42 lit termer thread .
- ;
-
-: dw
-    port dwVopen
-    d parse dup type port dwVwriteln
+    lit dwReader thread . 40 sleep drop
+    lit termer thread .
 ;
+
 
 

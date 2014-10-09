@@ -136,3 +136,15 @@ On top of this can be constructed ever more elaborate means of IPC.
 
 
 
+* klock
+* lwait - waiton
+
+* : lock ( a -- w ) \ lock monitor 
+* : waiton ( a -- w ) \ wait on a monitor ( releases lock and waits )
+
+: waitfor ( kid -- u w ) \ wait for task u to die, returns u with exit status
+: wait ( -- kid w ) \ wait for any child task to die
+: sleep ( u -- w ) \ Kern iface: sleep for u ticks
+
+
+

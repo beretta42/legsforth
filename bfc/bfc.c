@@ -605,6 +605,7 @@ void setorg(){
   orgin=stack[ --sp ];
   if( orgin<=cp ){
     fprintf(stderr,"Error: orgin is less than current cp!\n" );
+    fprintf(stderr,"Image Org is %x, CP is %x\n", orgin, cp );
     quit(-1);
   }
   cp=orgin;

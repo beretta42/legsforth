@@ -6,7 +6,6 @@
 ;;;   	- no stack or memory bounds checking	
 
 
-	include	"task.d"
 
 	
 ; MB	 equ   0x3000		; base address of memory store
@@ -15,8 +14,8 @@
 
 
 
-MB	import			; Base cpu address of VM's memory
-MEMZ	import			; size of VM's memory in bytes
+; MB	import			; Base cpu address of VM's memory
+; MEMZ	import			; size of VM's memory in bytes
 
 	
 ;;; Registers:
@@ -33,13 +32,13 @@ MEMZ	import			; size of VM's memory in bytes
 
 
 
-	section	code
+;	section	code
 
 ;;; Register a extension Primitive
 ;;; entry: X is address of routine
 ;;; exit:  none
 ;;; mods:  all
-	export	rprim	
+;	export	rprim	
 rprim
 	pshs	b		; save op code
 	lslb			; convert op code into byte offset
@@ -50,8 +49,7 @@ rprim
 ;;; Append table of primitives
 ;;;   takes: X is address to table, D is the table length in bytes
 ;;;   returns: nothing
-;;;   THIS IS UNTESTED!!!
-	export 	rptab
+;	export 	rptab
 rptab
 	pshs	d,x,y,u		; save regs
 	tfr	x,u		; u is source
@@ -65,8 +63,14 @@ rptab
 ;;; and starts the inner-interpreter
 ;;; entry: none
 ;;; exit:  doesn't
-	export 	goforth
+;	export 	goforth
 goforth
+	;; setup interrupt
+	pshs	 cc
+	orcc	 #0x50		; turn off interrupts
+	ldd	 #int		; load of D with interrupt vector
+	std	 0x010d		; store in interrupt vector table
+	puls	 cc
 	;; we should clr the VM's memory....
 	lds	#MEMZ+MB	; setup return pointer
 	ldx	MB		; setup IP tp point to VM's reset vector
@@ -174,11 +178,11 @@ plus
 ;	bra	next		; fall-through to next
 
 next
-*	tst	iflag		; is there an interrupt pending?
-*	beq	next0		; nope 
-*	clr	iflag		; reset flag
-*	ldd	MB+2		; load d with interrupt vector
-*	bra	next1		; go processes vector
+	tst	iflag		; is there an interrupt pending?
+	beq	next0		; nope 
+	clr	iflag		; reset flag
+	ldd	MB+2		; load d with interrupt vector
+	bra	next1		; go processes vector
 next0	ldd	,x++		; load next op code and inc IP
 next1	tsta                    ; is a primitive?
 	beq	next2		; yes then go processes
@@ -285,14 +289,16 @@ lit
 	jmp	next
 
 key
-	jsr	getstd
+	jsr	0xa1b1
+	tfr	a,b
 	clra
  	pshu 	d
 	jmp	next
 
 emit
  	pulu 	d
-	jsr	putstd	
+	tfr	b,a
+	jsr	0xa282
 	jmp 	next
 
 bye
@@ -317,53 +323,27 @@ pbang
 
 
 ion
-*	lda	#0xff
-*	sta	imask		; handle interrupts
+	lda	#0xff
+	sta	imask		; handle interrupts
 	jmp	next
 
 	
 ioff
-*	clr	imask		; don't handle interrupts
+	clr	imask		; don't handle interrupts
 	jmp	next
 
-;;;
-;;; These are legs16 extension words
-;;; 
-
-	
-syield				; ( -- )
-	jsr	yield
-	jmp	next		
-
-ssleep				; ( c -- ) c is unsigned no of ticks
-	pulu	d		; D is ticks
-	jsr	sleep		; sleep
-	jmp	next
-
-sspawn				; ( -- f ) f is -1 for parent, 0 for child
-	pshs	x		; save regs
-	ldd	#TSIZE		; size of task struct
-	jsr	sbrk		; alloc new struct
-	jsr 	clr		; clear
-	jsr	spawn		; spawn
-	bcs	parent@		; setup return for parent task
-	ldd	#0		; push 0 onto stack
-	bra	out@		; leave
-parent@ ldd	#-1		; push -1 onto stack
-out@	pshu	d		; push return onto stack
-	puls	x,pc		; restore, return
 
 	;; real interrupt handler
-* int
-*	lda	0xff02	   	; reset pia
-*	tst	imask		; are we handling interrupt?
-*	beq	int1		; no then return
-*	lda	#0xff		; 
-*	sta	iflag		; set flag for syncronizing with main loop
-*int1	rti
-*
-*imask	.db	0		; interrupt handler mask
-*iflag	.db	0		; marked true by interrupt handler
+int
+	lda	0xff02	   	; reset pia
+	tst	imask		; are we handling interrupt?
+	beq	int1		; no then return
+	lda	#0xff		; 
+	sta	iflag		; set flag for syncronizing with main loop
+int1	rti
+
+imask	.db	0		; interrupt handler mask
+iflag	.db	0		; marked true by interrupt handler
 	
 
 
@@ -412,8 +392,7 @@ table
 	.dw	pbang		; 38
 	.dw	ion		; 39
 	.dw	ioff		; 40
-	.dw	syield		; 41
-	.dw	ssleep		; 42
+
 etable
 	IFDEF RAW
 	zmb	table+256-.

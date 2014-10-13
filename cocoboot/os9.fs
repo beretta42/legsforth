@@ -23,7 +23,7 @@ This is the new-style os9 booter overlay file
 
 )
 
-setorg 1000 
+1000 setorg
 
 include 3var.fs
 include 2var.fs

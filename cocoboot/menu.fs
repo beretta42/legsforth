@@ -311,8 +311,8 @@ include out.fs
     if drop 0 self @ 1+ self ! redraw then
     union !
     false exit
-
+;
    
 
-done
+ done
 

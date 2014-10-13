@@ -63,7 +63,7 @@
 \ 
 \ uber-Simple Memory Allocation
 \ 
-: cp 4 ;
+: cp 17 ;
 : here cp @ ;
 : allot ( u -- ) 
     here + cp ! ;

@@ -42,8 +42,8 @@ a bit tighter on a small volume.
 
 
 : load ( addr u -- f ) \ load slot u to address
-    shl shl shl 8 + super @ + 
-    @+ lsn ! 
+    shl shl shl 8 + super @ +
+    @+ lsn !
     @ swap daddr !
     for read if pull drop true exit then 
     sectvec @ exec
@@ -63,9 +63,12 @@ a bit tighter on a small volume.
     next false
 ;
 
+\ This is not complete, it should do something
+\ if the load fails!
 : dofile ( u -- ) \ load slot and execute
     push 1000 dup pull load 0= if @ exec then ;
 
 
 done 
+
 

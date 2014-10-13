@@ -23,7 +23,7 @@
 \
 \ ******************************************
 
-setorg 1000
+1000 setorg
 
 include menu.fs
 
@@ -410,11 +410,11 @@ include menu.fs
     writeconf
     loadconf
     reboot
-    debug
+\   debug
     exam
     # 0
 
-: test 
+: test
     \ fill out table
     bmeth_table 
     lit chain !+

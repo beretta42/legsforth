@@ -25,7 +25,7 @@ your external rom image for vital HDB-DOS settings
 
 )
 
-setorg 1000
+1000 setorg
 
 include menu.fs
 

@@ -51,6 +51,7 @@
      next
   cr 
 ;
+       
 : depth ( -- u )
    sp@ memz 80 - swap - shr ;
 
@@ -58,8 +59,8 @@
    depth wemit ;
 
 : loop ( -- ) \ wait forever
-   begin key emit again
+   begin key emit again ;
 
-done
+ done
 
 

@@ -69,7 +69,7 @@ images/hdbdw4cc2.dif		\
 images/hdblrtech.dif		\
 hdbutil.fi			\
 os9.fi				\
-images/boot_ide512.mod
+
 
 
 
@@ -83,13 +83,13 @@ decb.rom:
 
 
 setup.fi: *.fs
-	$(BFC) -c -o setup.fi cocoboot.fs setup.fs
+	$(BFC) -cso setup.fi cocoboot.fs setup.fs
 
 hdbutil.fi: *.fs
-	$(BFC) -c -o hdbutil.fi cocoboot.fs hdbutil.fs
+	$(BFC) -cso hdbutil.fi cocoboot.fs hdbutil.fs
 
 os9.fi: *.fs
-	$(BFC) -c -o os9.fi cocoboot.fs os9.fs
+	$(BFC) -cso os9.fi cocoboot.fs os9.fs
 
 bpb.img: 
 	cat /dev/zero | dd bs=256 count=1 of=bpb.img	
@@ -128,4 +128,4 @@ dw2dsk.fi: *.fs
 	../bfc/bfc -c -o dw2dsk.fi dw2dsk.fs
 
 clean:
-	rm -f CCB.BIN forth.img *~ run.img *.slz *.dsk *.img *.ls
+	rm -f CCB.BIN forth.img *~ run.img *.slz *.dsk *.img *.ls *.fi

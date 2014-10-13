@@ -66,11 +66,10 @@ rptab
 ;	export 	goforth
 goforth
 	;; setup interrupt
-	pshs	 cc
 	orcc	 #0x50		; turn off interrupts
 	ldd	 #int		; load of D with interrupt vector
 	std	 0x010d		; store in interrupt vector table
-	puls	 cc
+	andcc	 #0xaf		; turn on interrupts
 	;; we should clr the VM's memory....
 	lds	#MEMZ+MB	; setup return pointer
 	ldx	MB		; setup IP tp point to VM's reset vector

@@ -38,8 +38,6 @@ include rofs.fs
     slit str "COCOBOOT2" type cr ;
 
 
-: loop begin key emit again ;
-
 : ?panic ( u -- ) \ issue error and panic
    dup if wemit slit str " PANIC!" type loop else drop ;
 
@@ -197,7 +195,7 @@ include rofs.fs
 \ *************************
 
 : drom ( u -- ) \ load slot u in rom and execute
-   sys @ 0= if toram then       \ if coco2 then copy rom to ram
+   sys @ 0= if toram else 0 ffdf p! then       \ if coco2 then copy rom to ram
    1000 2 load ?panic           \ load decb
    2900 swap load ?panic        \ load hdb overlay
    \ patch the decb rom

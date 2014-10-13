@@ -271,7 +271,7 @@ index    filename			notes
 	 images/hdblrtech.dif		
 14	 hdbutil.fi			Rom examination 
 15	 os9.fi				new os9 boot loader
-16	 boot_ide.mod			start of os9 boot drivers
+\ 16	 boot_ide.mod			start of os9 boot drivers
 
 
 
@@ -312,6 +312,7 @@ BUGS
 *************************
 Make recurses foreverly if images aren't made first!
 basic's console routines are goofy after a hard reset in HDB?
+
 
 *************************
 LOG

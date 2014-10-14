@@ -280,12 +280,10 @@ index    filename			notes
 TODO
 *************************
 
-* mod BFC to play with dictionary
 * work on compiling modules
 * run-time versioning system / self-upgrade
 * double check C/6809 VM's for matching primitive tokens
 * consider adding VM boot-up command-line arguments (need reason!)
-* upgrade to lwasm 4.8 and test
 * replace int routine back to basic when done
 * load via cassette?
 * ROM needs a drive no argument
@@ -298,14 +296,14 @@ TODO
 * add a IDE informational scan
 * add a flash ripper / burner for hdb or cocoboot
 * mod sIDE base address in setup.fs to list select rather than wentry
-* move LEGS for 6809 to tools dir
-* move BFC for LEGS to tools dir
 * test bastard disks on rofs ( when enough files...)
 * make rofs check for too big disks and not overright boot track
 * consider changing index slot size to 4 bytes (allows for 62 files )
 * consider changing RSDOS fat to show free clusters where not used by ROFS
 * figure out return value for os9 boot modules
 * factor out objective word ( menu.fs and os9.fs )
+* Headless Booting
+* test again RGB dos
 
 *************************
 BUGS
@@ -359,6 +357,7 @@ LOG
 * added license header to all source
 * made rofs work with bastard RSDOS fs.
 *** BIG CHANGES (again) in the bfc compiler may have broken this stuff!
+* fixed stuff that bfc mods broke
 
 ***********************************
 where at

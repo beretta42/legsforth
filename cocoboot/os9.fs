@@ -29,25 +29,37 @@ include 3var.fs
 include 2var.fs
 include debug.fs
 
-: os9type ( a -- "string" ) \ emit a os9 formatted string	
+: 9type ( a -- "string" ) \ emit a os9 formatted string	
    begin c@+ dup 7f and emit 80 and until drop ;
+: 9sz ( 9a -- u ) \ returns the size of a os9 formatted string
+   0 swap begin c@+ 80 and 0= while swap 1+ swap repeat drop 1+ ;
 
-: moddata ( -- a ) \ pointer to module's data
-   dovar # 0
+\ * old os9 module based sector reads
 
-: daddr ( -- a ) \ sector data address variable
-   moddata @ modoff + ;
+\ : moddata ( -- a ) \ pointer to module's data
+\   dovar # 0
 
-: meminit ( -- ) \ initialize forth memory
-   1002 @ cp ! 
-   100 alloc moddata !
-;
+\ : daddr ( -- a ) \ sector data address variable
+\   moddata @ modoff + ;
 
-: init ( -- f ) \ init module
-   moddata @ >p modinit ;
+\ : meminit ( -- ) \ initialize forth memory
+\   1002 @ cp !                   \ set cp to overlay's cp
+\   100 alloc moddata !           \ allocate modules instance data 
+\ ;
+\ : init ( -- f ) \ init module
+\   moddata @ >p modinit ;
+\
+\ : read ( l h -- ) \ read a sector
+\   moddata @ >p modread ;
+
 
 : read ( l h -- ) \ read a sector
-   moddata @ >p modread ;
+    2drop ;
+
+: meminit ( -- ) \ initialize forth memory
+   1002 @ cp !                   \ set cp to overlay's cp
+;
+
 
 : rdir ( -- 3a ) \ root directory inode of fs
    dovar # 0 # 0
@@ -182,8 +194,6 @@ c	4	inode number
 : wdir ( -- file ) 
    wdir' @ ;
 
-: 9strsz ( 9a -- u ) \ returns the size of a os9 formatted string
-   0 swap begin c@+ 80 and 0= while swap 1+ swap repeat drop 1+ ;
 
 : pdir ( file -- "dir" ) \ print directory
    push
@@ -191,7 +201,7 @@ c	4	inode number
    r@ fnext while
      here r@ fnext over r@ fget 
      shr shr shr shr shr for
-      dup c@ if dup os9type dup 9strsz wemit cr then 20 +      
+      dup c@ if dup 9type dup 9sz wemit cr then 20 +      
      next drop
    repeat
    pull drop
@@ -199,7 +209,7 @@ c	4	inode number
 
 
 : os9cmp ( ca 9a -- f ) \ returns true if ca matches os9str ptr 9a
-   dup 9strsz rot @+ rot over <> if 2drop drop false exit then
+   dup 9sz rot @+ rot over <> if 2drop drop false exit then
    for 
      c@+ rot c@+ 7f and rot <> if 2drop pull drop false exit then swap
    next 2drop true
@@ -254,8 +264,8 @@ c	4	inode number
    meminit
 
    \ load drive module and init it
-   mod p> 16 load drop     
-   init                    
+   \ mod p> 16 load drop     
+   \ init                    
 
    \ try to mount the RBF 
    mount panic             

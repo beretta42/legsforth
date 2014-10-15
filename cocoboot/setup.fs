@@ -317,6 +317,13 @@ include menu.fs
     #' 0
     str "MODIFY PROFILE"
     bmeth
+    tag
+    slotno
+    mpino
+    hwaddr
+    hdboffset
+    defid
+    noauto
     # 0    
 
 : profile_select

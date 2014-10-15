@@ -53,8 +53,8 @@ include debug.fs
 \   moddata @ >p modread ;
 
 
-: read ( l h -- ) \ read a sector
-    2drop ;
+: 9read ( l h -- ) \ read a sector
+    drop lsn ! read drop ;
 
 : meminit ( -- ) \ initialize forth memory
    1002 @ cp !                   \ set cp to overlay's cp
@@ -139,7 +139,7 @@ c	4	inode number
 
 
 : get ( a -- ) \ get next sector of file
-   >p daddr ! gnext read ;
+   >p daddr ! gnext 9read ;
 
 : dir? ( -- f ) \ returns true if file is a directory
    fd c@ 80 and ;   
@@ -156,7 +156,7 @@ c	4	inode number
 
 : iopen ( d -- ) \ init file object by inode 
    2dup inode 2! 
-   fd >p daddr ! read 
+   fd >p daddr ! 9read 
    rewind
 ;
 
@@ -241,7 +241,7 @@ c	4	inode number
 : mount ( -- f ) \ mount RBF filesystem
    \ mount filesystem
    here >p  daddr !
-   0 0 read
+    0 0 9read
    here 8 + 3@ rdir 3!    \ get root dir inode number
 
    \ open root directory as working dir
@@ -253,26 +253,29 @@ c	4	inode number
 : panic ( f -- "err" )
    0= if 
       cr
-      slit str "PANIC: /CCB DOES NOT EXIST." type cr
+      slit str "PANIC:" type cr
       slit str "ANYKEY TO REBOOT" type key drop cold
    then
 ;
 
 
-: main
-   \ initialize memory
-   meminit
-
-   \ load drive module and init it
-   \ mod p> 16 load drop     
-   \ init                    
-
-   \ try to mount the RBF 
+: main ( a u -- )  \ profile addr and index pass in from chain loader
+    \ initialize memory
+    meminit
+    \ load up the HDB context
+    drop HDBSwitch
+    \ patch HDB INIT to RTS back to us
+    \ find loc of warm start address in setup routine
+    \ and replace with NOP
+    d93f begin dup pw@ a0e2 - while 1+ repeat 2 + p>
+    12 c!+ 12 c!+ drop
+    \ and find and execute HDINIT in HDB
+    d93f begin dup pw@ 0900 - while 1+ repeat 1 - exem
+    \ try to mount the RBF 
    mount panic             
-  
+   
    \ change working dir to "/CCB"
-   slit str "CCB" chdir panic
-
+   \ slit str "CCB" chdir panic
 
    cr slit str "OK!" type cr
    begin key emit again ;   

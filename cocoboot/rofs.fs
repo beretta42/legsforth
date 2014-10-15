@@ -65,9 +65,8 @@ a bit tighter on a small volume.
 
 \ This is not complete, it should do something
 \ if the load fails!
-: dofile ( u -- ) \ load slot and execute
+: dofile ( i*j u -- ) \ load slot and execute
     push 1000 dup pull load 0= if @ exec then ;
-
 
 done 
 

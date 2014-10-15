@@ -191,20 +191,26 @@ include rofs.fs
     0 ffdf p! ;
 
 \ *************************
-\ DROM booting
+\ DROM Switching
+\   "drom" causes a switch from
+\   one HDBDOS to Another HDBDOS in memory
 \ *************************
 
+
+\ wrong address.. there could be something loaded at 1000!!!
 : drom ( u -- ) \ load slot u in rom and execute
-   sys @ 0= if toram else 0 ffdf p! then       \ if coco2 then copy rom to ram
-   1000 2 load ?panic           \ load decb
-   2900 swap load ?panic        \ load hdb overlay
-   \ patch the decb rom
-   3000 
-   begin @+ dup while 
-      1000 + push c@+ pull c!
-   repeat 2drop
-   \ mv image from 1000 to c000
-   1000 >p c000 2000 mv     
+    sys @ 0= if toram
+    else 0 ffdf p! then         \ if coco2 then copy rom to ram
+    1000 p> 2 load ?panic
+    2900 p> swap load ?panic
+    \ patch the decb rom
+    3000 p> 
+    begin @+ dup while 
+	    1000 p> + push c@+ pull c!
+    repeat 2drop
+    \ mv image from 1000 to c000
+    llioff
+    1000 c000 2000 mv
 ;
 
 
@@ -217,7 +223,7 @@ include rofs.fs
 ;
 
 
-: dexec ( -- ) \ execute drom
+: dexec ( -- ) \ execute drom setup code ( reboots to loaded HDB )
    c002 exem ;
 
 
@@ -227,7 +233,11 @@ include rofs.fs
 : setup ( -- ) \ execute the setup 
   1 dofile ;  
 
-: bootdrom ( profile -- ) \ boot drom
+
+\ This applies the profile's HDB image/setting
+\ it essentially allows swaping of HDB images on
+\ bootup.
+: HDBSwitch ( profile -- ) \ apply HDB switch
     \ create image and put it in place
     dup pro_slotno @ dromoff + drom
     \ switch the mpi
@@ -240,6 +250,14 @@ include rofs.fs
     dup pro_defid c@ d93e p!
     \ defeat autoboot?
     dup pro_noauto @ if defauto then
+    drop ioff
+;
+
+
+
+: bootdrom ( profile -- ) \ boot drom
+    dup HDBSwitch
+    \ quit bye reiniting HDBDOS
     dexec
 ;
 
@@ -271,25 +289,34 @@ include rofs.fs
 \ Boot new-style os9
 \ ************************
 
-: bootos9 ( -- ) 
+: bootos9 ( a u -- ) \ takes profile address and index no
+    \ os9 boot will soon be bigger than
+    \ this kernel can be, so chain-load image
    15 dofile     
 ;
 
 \ **********************
 
+\ boot passes in the following to the called boot methods
+\    method ( a u -- )
+\    a = address of bootprofile
+\    u = boot profile number
 
-: boot ( u -- ) \ boot profile number 
-    0 swap for 30 + next profs +
+: boot ( u -- ) \ boot profile number
+    push
+    0 r@ for 30 + next profs +
     slit str "BOOTING " type
     dup type cr
     dup pro_method @ 
-      dup 0=  if over pro_drive @ dos else
+      dup 0=  if over pro_drive c@ dup bemit dos else
       dup 1 = if drop bootdrom else
       dup 2 = if drop bootrom else
-      dup 3 = if drop bootos9 else
+      dup 3 = if drop r@ bootos9 else
       then then then
       4 ?panic
 ;
+
+
 
 
 : menu ( -- )

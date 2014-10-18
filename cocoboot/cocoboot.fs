@@ -34,12 +34,13 @@ include debug.fs
 include dskcon.fs
 include rofs.fs
 
+
 : hello
     slit str "COCOBOOT2" type cr ;
 
 
 : ?panic ( u -- ) \ issue error and panic
-   dup if wemit slit str " PANIC!" type loop else drop ;
+   dup if wemit slit str " PANIC!" type loop else drop then ;
 
 : width40 ( -- ) \ change to 40 column mode
    f65c exem ;
@@ -168,7 +169,7 @@ include rofs.fs
     20 + ;
 : pro_offset ( profile -- a ) \ HDB offset
     22 + ;  \ 3 bytes !
-: pro_defid  ( profile -- a ) \ HDB Default ID
+: pro_defid  ( profile -- a ) \ HDB Default SCSI ID
     25 + ;  \ 1 bytes
 : pro_noauto \ ( profile -a ) \ HDB defeat autoboot flag
     26 + ;  \ flag

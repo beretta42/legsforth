@@ -323,7 +323,7 @@ include menu.fs
     hwaddr
     hdboffset
     defid
-    noauto
+    driveno
     # 0    
 
 : profile_select

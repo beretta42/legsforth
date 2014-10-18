@@ -25,7 +25,6 @@ They are not generic forth
 
 include basics.fs
 
-
 p: 40 mod ( -- a )      \ gets start of module addresses
 p: 41 pw@ ( a -- x )    \ gets a word from p-space
 p: 42 pw! ( x a -- )    \ writes a word to p-space

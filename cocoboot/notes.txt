@@ -276,6 +276,28 @@ index    filename			notes
 
 
 
+
+Memory Map:
+
+***********************
+0000 2600  BASIC
+2600 3800  chain boot area
+3800 4500  CCB ASM
+4500 8000  LEGS Memory:
+  4500 5500  CCB CORE       0000 1000
+  5500 7f00  overlay area   1000 3a00
+  7f00 8000  forth stacks   3a00 3b00
+8000 a000  ext basic
+a000 c000  basic
+c000 e000  disk basic
+e000 ff00  super basic
+
+***********************
+
+
+
+
+
 *************************
 TODO
 *************************
@@ -359,37 +381,17 @@ LOG
 * made rofs work with bastard RSDOS fs.
 *** BIG CHANGES (again) in the bfc compiler may have broken this stuff!
 * fixed stuff that bfc mods broke
-* fix "DOS" style boot (profile struct err)
-
-***********************************
-where at
-***********************************
-
-testing loading a sector
-
-s: cc count lsn1 lsn2
-
-forked boot_ide512 for reading 512 sectors
-modded the LBA mode - test!
-todo: mod the CHS mode (mostly stack change!)
-todo: fixup nitros9 makefile to compile this module.
+* fixed "DOS" style boot (profile struct err)
 
 
 
 
-***********************
-0000 2600  BASIC
-2600 3800  chain boot area
-3800 4500  CCB ASM
-4500 8000  LEGS Memory:
-  4500 5500  CCB CORE       0000 1000
-  5500 7f00  overlay area   1000 3a00
-  7f00 8000  forth stacks   3a00 3b00
-8000 a000  ext basic
-a000 c000  basic
-c000 e000  disk basic
-e000 ff00  super basic
+current problem: HDB's version of DSKCON always does floppy to LSN
+translation.  HDB provides for a known table of direct access
+routines, but unfortunately fails to provide the user with known
+access to constants required to use them.  Every flavor of HDB used
+device specific command constants.  Booo!
 
-***********************
-
-we need 0x2000 area.
+in HDB there are routine called RBLOCK and WBLOCK that would do the
+work, but require register arguments.  These routines' addresses would
+have to be grepped for at runtime.  Boo!

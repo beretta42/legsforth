@@ -28,6 +28,7 @@ This is the new-style os9 booter overlay file
 include 3var.fs
 include 2var.fs
 include debug.fs
+include hdb.fs
 
 : 9type ( a -- "string" ) \ emit a os9 formatted string	
    begin c@+ dup 7f and emit 80 and until drop ;
@@ -53,8 +54,15 @@ include debug.fs
 \   moddata @ >p modread ;
 
 
+\ 
+\ When in HDB, its easiest to dynamically change
+\ "The Offset" to get full LSN access, rather
+\ then depend on a whole mess of drive geometry changes!
+\ 
 : 9read ( l h -- ) \ read a sector
-    drop lsn ! read drop ;
+    HDBOFF p> 3!
+    0 lsn !
+    read drop ;
 
 : meminit ( -- ) \ initialize forth memory
    1002 @ cp !                   \ set cp to overlay's cp
@@ -139,7 +147,7 @@ c	4	inode number
 
 
 : get ( a -- ) \ get next sector of file
-   >p daddr ! gnext 9read ;
+   daddr ! gnext 9read ;
 
 : dir? ( -- f ) \ returns true if file is a directory
    fd c@ 80 and ;   
@@ -156,7 +164,7 @@ c	4	inode number
 
 : iopen ( d -- ) \ init file object by inode 
    2dup inode 2! 
-   fd >p daddr ! 9read 
+   fd daddr ! 9read 
    rewind
 ;
 
@@ -201,7 +209,7 @@ c	4	inode number
    r@ fnext while
      here r@ fnext over r@ fget 
      shr shr shr shr shr for
-      dup c@ if dup 9type dup 9sz wemit cr then 20 +      
+      dup c@ if dup 9type cr then 20 +      
      next drop
    repeat
    pull drop
@@ -216,44 +224,64 @@ c	4	inode number
 ;
 
 
-: lookup ( ca file -- d -1 | 0 ) \ find a name in a directory
-   push
-   begin
-   r@ fnext while
-     here r@ fnext over r@ fget 
-     shr shr shr shr shr for
-      dup c@ if 
-          2dup os9cmp if nip 1d + 3@ true pull pull 2drop exit then 
-      then 20 +      
-     next drop 
-   repeat
-   drop pull drop false
+: lookup ( ca file -- d -1 | 0 ) \ find a name in a directory, -1 is match
+    push
+    r@ frewind
+    begin
+	r@ fnext while
+	    here r@ fnext over r@ fget 
+	    shr shr shr shr shr for
+	    dup c@ if 
+		2dup os9cmp if nip 1d + 3@ true pull pull 2drop exit then 
+	    then 20 +      
+	    next drop 
+    repeat
+    drop pull drop false
 ;
+ 
+
 
 : chdir ( ca -- f ) \ change working dir to ca
-   wdir c + 2@ rot wdir frewind wdir lookup if
-     wdir fopen wdir fdir? if 2drop true exit 
-     else wdir fopen false exit then
+    wdir c + 2@ rot wdir lookup if
+	\ if lookup ok:
+	wdir fopen wdir fdir?
+	\ found and name is a dir
+	if 2drop false exit
+	\ lookup not found
+     else wdir fopen true exit then
    then
-   2drop false ;
+   2drop true ;
 
 
 : mount ( -- f ) \ mount RBF filesystem
-   \ mount filesystem
-   here >p  daddr !
+    \ read LSN 0
+    here daddr !
     0 0 9read
-   here 8 + 3@ rdir 3!    \ get root dir inode number
+    \ we really should check more of the filesystem
+    \ structure  here, to make sure we're really
+    \ dealing with a proper OS9 filesystem
 
-   \ open root directory as working dir
-   falloc wdir' !
-   rdir 3@ wdir fopen
-   wdir fdir? 
+    \ print volume name for coolness
+    here 1f + 9type cr
+    \ end of verify system
+    here 8 + 3@ rdir 3!    \ get root dir inode number
+    \ open root directory as working dir
+    falloc wdir' !
+    rdir 3@ wdir fopen
+    wdir fdir? 0=
+\    wdir dump
 ;
 
+
+\ not smaller     nz = error
+\ equal     z  = ok
+\ bigger       = error
+
+
 : panic ( f -- "err" )
-   0= if 
+   if 
       cr
-      slit str "PANIC:" type cr
+      slit str "PANIC!" type cr
       slit str "ANYKEY TO REBOOT" type key drop cold
    then
 ;
@@ -263,21 +291,43 @@ c	4	inode number
     \ initialize memory
     meminit
     \ load up the HDB context
-    drop HDBSwitch
-    \ patch HDB INIT to RTS back to us
+    drop dup HDBSwitch cr
+    \ Now we further patch HDB to make a proper
+    \ init routine.
+    
     \ find loc of warm start address in setup routine
-    \ and replace with NOP
+    \ and replace with NOP to restrict HDBINIT to RTS to US
     d93f begin dup pw@ a0e2 - while 1+ repeat 2 + p>
     12 c!+ 12 c!+ drop
+    \ find call to BEEP that doesn't work without the Standard
+    \ IRQ handler, and write a rts instead. cut the init routine short.
+    \ that's fine, it just call BASIC to autoboot, anyway.
+    d93f begin dup pw@ d934 pw@ - while 1+ repeat 1 -
+    39 swap p!
+
     \ and find and execute HDINIT in HDB
     d93f begin dup pw@ 0900 - while 1+ repeat 1 - exem
-    \ try to mount the RBF 
-   mount panic             
-   
-   \ change working dir to "/CCB"
-   \ slit str "CCB" chdir panic
+    \ set HDB's IDNUM
+    dup pro_drive c@ IDNUM p!
+    \ reset DSKCON trk/sec, we don't use them
+    \ we'll directly mangle HDBOFF instead
+    0 drive c!
+    \ try to mount the RBF
+    slit str "INSRT ROOT, ANY KEY" type key drop cr
+    mount
+    if slit str "MOUNT FAILED" type cr true panic then
+    \ wdir pdir
+    \ change working dir to "/CCB"
+    \ slit str "CCB" chdir 
+    \ if slit str "/CCB DOES NOT EXIST" type cr true panic then
 
-   cr slit str "OK!" type cr
-   begin key emit again ;   
-
+    \ for now just load up the OS9Boot file
+    
+    slit str "OS9Boot" wdir lookup 0= if
+	slit str "NO OS9BOOT ON ROOT" type cr true panic then
+    falloc dup push fopen
+    r@ fsize wemit wemit
+ 
+    cr slit str "OK!" type cr
+    begin key emit again ;   
 

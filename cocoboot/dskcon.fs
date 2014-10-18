@@ -50,7 +50,7 @@ Load up "daddr", "lsn" and "drive" variables and call read or write
     swap c!+  	      \ sector
     daddr @ >p !+     \ data address
     c004 pw@ exem c@  \ execute dskcon and get return
-;  
+;
   
 
 : read ( -- f ) \ load a sector via dskcon
@@ -59,6 +59,6 @@ Load up "daddr", "lsn" and "drive" variables and call read or write
 : write ( -- f ) \ save a sector via dskcon
     3 dskgo ;
 
-
+    
 done
 

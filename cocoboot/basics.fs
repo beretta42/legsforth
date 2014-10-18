@@ -58,7 +58,12 @@
 : rot ( a b c -- b c a ) \ rotate 
    push swap pull swap ;
 : -rot ( a b c -- c a b ) \ reverse rotate
-   rot rot ;
+    rot rot ;
+: docreate ( -- a ) \ create runtime
+    r@ cell+ pull @ exec ;
+: dofield ( a -- a ) \ field runtime
+    @ + ;
+: u< 2dup xor 0< if nip 0< exit then - 0< ;
 
 \ 
 \ uber-Simple Memory Allocation

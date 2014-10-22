@@ -83,6 +83,11 @@ include hdb.fs
 
 (
 
+This part was written before BFC did file structure
+It should be rewritten.
+
+
+
   File structure
 in hex:
 offset	size	what

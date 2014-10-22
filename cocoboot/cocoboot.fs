@@ -192,7 +192,7 @@ include rofs.fs
     0 ffdf p! ;
 
 \ *************************
-\ DROM Switching
+\ HDBDROM Switching
 \   "drom" causes a switch from
 \   one HDBDOS to Another HDBDOS in memory
 \ *************************
@@ -292,7 +292,7 @@ include rofs.fs
 
 : bootos9 ( a u -- ) \ takes profile address and index no
     \ os9 boot will soon be bigger than
-    \ this kernel can be, so chain-load image
+    \ this kernel can be, so chain-load the os9 boot forth image
    15 dofile     
 ;
 

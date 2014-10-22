@@ -333,8 +333,11 @@ include menu.fs
 
 : profile_draw
     pos!
-    label type 
-    88 pw@ ascii over p! 1+ 88 pw!
+    label type space
+    88 pw@ ascii over p! 1+ 88 pw!	
+    space
+    self @ profs + modprof ! 
+    getprof type 
 ;
 
 
@@ -345,7 +348,7 @@ include menu.fs
     profile_draw
     # 0
     #' 0
-    str "MODIFY PROFILE "
+    str " PROFILE"
 
 \ profile object
 : profile1
@@ -354,7 +357,7 @@ include menu.fs
     profile_draw
     # 0
     #' 1
-    str "MODIFY PROFILE "
+    str " PROFILE"
 
 \ profile object
 : profile2
@@ -363,7 +366,7 @@ include menu.fs
     profile_draw
     # 0
     #' 2
-    str "MODIFY PROFILE "
+    str " PROFILE"
 
 \ profile object
 : profile3
@@ -372,7 +375,7 @@ include menu.fs
     profile_draw
     # 0
     #' 3
-    str "MODIFY PROFILE "
+    str " PROFILE"
 
 
 : l100

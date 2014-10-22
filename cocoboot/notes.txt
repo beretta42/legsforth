@@ -304,15 +304,11 @@ TODO
 
 * work on compiling modules
 * run-time versioning system / self-upgrade
-* double check C/6809 VM's for matching primitive tokens
 * consider adding VM boot-up command-line arguments (need reason!)
 * replace int routine back to basic when done
 * load via cassette?
 * ROM needs a drive no argument
-* HDBOS uses uint8 at 014e to control "drive on/off" HD/Floppy divide
 * issue a DW command at boot? at profile boot?
-* refactor rofs.fs
-* pull out drive variables from dskcon in separate include
 * CPU speed control in dw2dsk....
 * add a forth outer interpreter
 * add a IDE informational scan
@@ -322,11 +318,12 @@ TODO
 * make rofs check for too big disks and not overright boot track
 * consider changing index slot size to 4 bytes (allows for 62 files )
 * consider changing RSDOS fat to show free clusters where not used by ROFS
-* figure out return value for os9 boot modules
 * factor out objective word ( menu.fs and os9.fs )
 * Headless Booting
 * test against RGB dos
-* update code for BFC file structures.
+* update code for BFC structures.
+* add shut-off DW's HDB translation
+
 
 *************************
 BUGS
@@ -382,11 +379,13 @@ LOG
 *** BIG CHANGES (again) in the bfc compiler may have broken this stuff!
 * fixed stuff that bfc mods broke
 * fixed "DOS" style boot (profile struct err)
+* os9.fs uses HDBOFF to get LSN regardless of DW geometry
 
 
 
 
-current problem: HDB's version of DSKCON always does floppy to LSN
+******
+problem: HDB's version of DSKCON always does floppy to LSN
 translation.  HDB provides for a known table of direct access
 routines, but unfortunately fails to provide the user with known
 access to constants required to use them.  Every flavor of HDB used
@@ -395,3 +394,11 @@ device specific command constants.  Booo!
 in HDB there are routine called RBLOCK and WBLOCK that would do the
 work, but require register arguments.  These routines' addresses would
 have to be grepped for at runtime.  Boo!
+
+solution:
+because HDB is in RAM memory, we can directly set the HDB Offset and
+use 0's for track and sector, then call DSKCON. DKSCON converts the
+trk/sec to lsn 0 and adds the HDB offset... giving us a way to read
+logical sectors without the 41 megs limitation of DSKCON's trk/sec
+conversion!! Yeah!
+*******

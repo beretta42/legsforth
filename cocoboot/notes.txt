@@ -302,8 +302,7 @@ e000 ff00  super basic
 TODO
 *************************
 
-* work on compiling modules
-* run-time versioning system / self-upgrade
+* run-time versioning system / self-upgrade?
 * consider adding VM boot-up command-line arguments (need reason!)
 * replace int routine back to basic when done
 * load via cassette?
@@ -318,7 +317,7 @@ TODO
 * make rofs check for too big disks and not overright boot track
 * consider changing index slot size to 4 bytes (allows for 62 files )
 * consider changing RSDOS fat to show free clusters where not used by ROFS
-* factor out objective word ( menu.fs and os9.fs )
+* factor out objective words ( menu.fs and os9.fs )
 * Headless Booting
 * test against RGB dos
 * update code for BFC structures.
@@ -380,6 +379,7 @@ LOG
 * fixed stuff that bfc mods broke
 * fixed "DOS" style boot (profile struct err)
 * os9.fs uses HDBOFF to get LSN regardless of DW geometry
+* os9.fs now boots CCB1-style os9!!
 
 
 
@@ -402,3 +402,7 @@ trk/sec to lsn 0 and adds the HDB offset... giving us a way to read
 logical sectors without the 41 megs limitation of DSKCON's trk/sec
 conversion!! Yeah!
 *******
+
+
+
+F.sreqmem call: 0xf19e

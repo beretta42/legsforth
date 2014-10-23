@@ -131,10 +131,12 @@ c	4	inode number
 : lsn ( -- a ) \ current lsn
    self 118 + ;
 
+\ this is lousy logic here, unclear!!!
 : next? ( -- u ) \ 0 if EOF, else bytes in next sector
    lcount @ dup 0= if exit then 
-   1 = if odd @ else 100 then  
+   1 = if odd @ dup 0= if drop 100 then else 100 then  
 ;
+
 
 : gnext ( -- d ) \ get next lsn of file
    \ if count is zero then get next segment
@@ -166,6 +168,7 @@ c	4	inode number
    \ reset segment sector count
    false count !
 ;
+
 
 : iopen ( d -- ) \ init file object by inode 
    2dup inode 2! 
@@ -291,6 +294,19 @@ c	4	inode number
    then
 ;
 
+: gimme ( pa -- ) \ applies gimme setting to primitive address
+    p>
+    6c00 !+
+    0000 !+
+    0900 !+
+    0000 !+
+    0320 !+
+    0000 !+
+    00 c!+
+    ec01 !+
+    00 c!+
+    drop
+;
 
 : main ( a u -- )  \ profile addr and index pass in from chain loader
     \ initialize memory
@@ -326,13 +342,53 @@ c	4	inode number
     \ slit str "CCB" chdir 
     \ if slit str "/CCB DOES NOT EXIST" type cr true panic then
 
-    \ for now just load up the OS9Boot file
+    \ load up the ccbkrn file
     
+    slit str "ccbkrn" wdir lookup 0= if
+	slit str "NO CCBKRN ON ROOT" type cr true panic then
+    falloc dup push fopen
+
+    \ load up CCBKRN file
+    2600 p>
+    begin r@ fnext while dup r@ fget 100 + repeat drop
+
+    llioff rammode
+    \ copy ccbkrn to place in memory
+    2600 f000 f00 mv
+    
+    \ load up the OS9Boot file
+    1 ffa4 p!
+    2 ffa5 p!
     slit str "OS9Boot" wdir lookup 0= if
 	slit str "NO OS9BOOT ON ROOT" type cr true panic then
     falloc dup push fopen
-    r@ fsize wemit wemit
- 
+    r@ fsize drop dup ff00 and swap ff and if 100 + then ( size )
+    dup f000 swap - ( size pstart )
+    \ put OS9Boot parts below C000 directly into memory
+    p> begin dup >p c000 - while dup r@ fget 100 + repeat drop ( z )
+    \ we can't overwrite disk basic while we're loading so
+    \ put OS9Boot parts in C000 - E000 into temp area for copying
+    \ to place after finishing up loading
+    1000 p> begin dup >p 3000 - while dup r@ fget 100 + repeat drop ( z )
+    \ and put OS9Boot part in E000 - F000 directly into memory
+    e000 p> begin dup >p f000 - while dup r@ fget 100 + repeat drop ( z )
+    \ we're done with disk basic now, so copy the c000 block into memory
+    3 ffa6 p!
+    1000 c000 2000 mv
+    
+    \ map phys 0 to cpu space 0000
+    0 ffa0 p!
+    \ clear dp block
+    0 p> 100 for 0 c!+ next drop
+    \ make screen pointer
+    8 6002 pw!
+    \ setup gimme & DP mirror
+    ff90 gimme
+    90 gimme
+
+    \ jump to ccbkrn ( size arg is on stack already)
+    f009 pw@ f000 + exem
+    
     cr slit str "OK!" type cr
     begin key emit again ;   
 

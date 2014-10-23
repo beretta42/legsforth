@@ -1,0 +1,208 @@
+CoCoBoot2
+
+
+CoCoBoot2 allows a profiled bootup of a Color Computer 2 or 3. Some of the important goals of CoCoBoot2:
+
+The replacement of Nitros9's BOOT and REL modules.
+Dynamic loading of Nitros9 modules directly from any RBF filesystem.
+Dynamic loading of HDBDOS.
+
+
+
+REQUIREMENTS
+
+DECB or HDBDOS *
+Color Extended Basic
+
+* RGB DOS seems to work but testing remains.
+
+At the very least, you will need a way to access a floppy image from
+your coco.  CoCoBoot (CCB) uses the DSKCON interface, so any system
+supporting DSKCON will be able to boot CCB.  This includes most
+flavors of ROM for the CoCo.
+
+I have plans in the future to support Cassette Tape and direct ROM
+based loading.
+
+
+
+STARTING COCOBOOT
+
+CoCoBoot is distributed as a DDSS floppy image of a CoCo's normal 35
+track, 18 sector disk.  This image presents a valid RSDOS filesystem
+to DECB ( or HDBDOS ) and includes a "AUTOEXEC.BAS" file, HDBDOS
+Volume Label, and a "DOS" track.  This allows for easy autobooting of
+CCB from newer emulators like XRoar or anything running HDBDOS.  
+
+to Manualy start CCB, insert the CCB disk into Drive 0, and type the
+following at the BASIC prompt:
+
+DOS
+
+or
+
+LOAD"AUTOEXEC.BAS":RUN
+
+
+Obviously, the prefered choice is the "DOS" command, but under just
+DECB, CCB will be restricted to only loading CCB off drive 0.  Users with a
+ROM'ed HDBDOS will also be able to type:
+
+DOS #
+
+where "#" is the drive number storing the CoCoBoot disk.
+ 
+
+
+CONFIGURING COCOBOOT
+
+On first boot, CCB boots directly to a setup program allowing one to
+configure CCB.  It is recommended to be familiar with your machines'
+settings, in particular your HDB OFFSETs and ROM slot/bank contents. I
+would advise making a list, before you setup CCB of:
+
+* MPI switch settings for drive devices
+IDE/SCSI/CoCoSDC hardware address settings
+SuperIDE/CoCoSDC flash ROM contents
+Nitros9 devices, drives, and offsets ( if using SuperDriver )
+HDBDOS devices, drives, and offsets 
+Which flavor of DriveWire are you using? (bitbanger?, becker? )
+
+NOTE:  Under the Main Menu of the CCB setup program, is a HDBDOS
+examiner, which will let you scan your ROM's for DECB and report
+a HDBDOS's ROM settings.
+
+WARNING: You can do bad things with CoCoBoot. *very bad things*. The
+one, however, that's not entire horrible, is incorectly modifying
+HDBDOS's partition offset.  That's the long-ish hex number that
+specifies were on a particular drive the HDBDOS floppy images start.
+Attempting to write to a drive in HDBDOS with an improperly set Offset
+is disasterous. Reading, however is ugly, if not benign.
+
+
+
+The setup (SETUP) program is a simple menu program designed for configuring
+the boot process.  The menu system is simple and fast.  All menu
+items are selected via a keystroke.  The inverted charactor is the key
+needed to select this item.  Text/Number fields require a "CR", or
+pressing <ENTER> to accept and continue after selection (and
+editing).  Pretty much a 1980's style menu interface.  Pressing
+<BREAK> will navaigate up the menusystem.  <RIGHT_ARROW> and
+<LEFT_ARROW> are used in "selector" fields, such as the HDBDOS image
+selectors.  And finaly some rotation selections simple rotate through
+a list of regular settings at each selection.  
+
+NOTE:  All of CoCoBoot's numbers are in *HEX* not decimal!
+
+
+The MAIN Menu:
+
+System Type
+   Select either CoCo2 or CoCo3
+
+Timeout 
+   Enter number of second to wait at bootup for user to press a
+   key to enter the boot menu.  After this timeout the default profile
+   is loaded and booted.
+
+No Autoboot 
+   Set to disable timeout booting.  If this is set to "yes"
+   then CCB will not attempt to autoboot, and will alway present a
+   boot menu at bootup.
+
+Default Profile 
+   Select to rotate through which profile to autoboot, if
+   enabled, above.
+
+Profile 0-4
+   Pressing 0-4 will activate the profile-setup submenu for the
+   respective profile. See "BOOT PROFILES" below.
+
+Write Config
+   Will write the configuration file to disk.  You will be prompted
+   for assurance, press "Y" or "N".
+
+Load Config
+   Will load the configuration tables from disk. You will be prompted
+   for assurance, press "Y" or "N".
+
+Reboot
+   does the obvious really well.
+
+HDB Exam
+   Selecting this will load a sub-program to allow you to peruse your
+   external ROMS for settings.
+
+
+
+BOOT PROFILES
+
+CoCoBoot allows the user to create 4 distinct boot profiles that can
+be user selected or autoloaded at boot.  SETUP allows for the
+configuration of each profile via a sub-menu.  There are four primary
+boot methods, "DOS", "HDB", "ROM", "OS9".  Each method has its own
+particular settings that can be modified. (NOTE: not all of the
+boot methods will present these settings!)
+
+Tag
+  A Texual Name that presented at bootup for this profile. Select to
+  edit and press <ENTER> to accept and set after editing.
+
+Disk Rom Image
+  Allows user to choose which flavor of HDBDOS to load.  Selecting
+  this will present the user with a large selector widget to select
+  which flavor of HDB.  The "OS9" boot method will use this to select
+  which HDB driver to load.  Use arrow keys to select and <BREAK> to
+  go back to the profile editor.
+
+MPI Switch
+  CCB will swich the MPI switch upon boot to the current setting.
+
+Device Address
+  - The HDB boot method uses this to patch HDBDOS prior to reboot.
+  - The ROM boot method uses this as the hardware base of the flash rom
+  of SuperIDE or CoCoSDC.
+
+Flash Rom Bank
+  controls which flash rom to activate (Super IDE or CoCoSDC )
+
+HDB OFFSET
+  The starting sector of the HDB floppies.
+
+DEFID
+  The HDBDOS default ID.  This is used by HDBDOS to select the default
+  drive number for SCSI, IDE and DW
+
+Disable Autoboot
+  Patches the loaded HDB to NOT autoboot "AUTOEXEC.BAS"
+
+Drive No
+  - OS9 boot method uses this to set which drive to boot Nitros from
+  - DOS boot method uses this switch DSKCON disk prior to boot
+  
+
+
+BOOT METHODS
+
+"External ROM" or "ROM":  simply activates an external flash ROM or
+regular ROM and boots it.  
+
+"OS9" is a new style Nitros9 booter that directly loads OS9BOOT from
+the RBF disk located in any HDBDOS supported device/drive.  A special
+module, called CCBKrn, is loaded as a replacement for regular
+Krn. 
+
+"DOS" replicates the action of a BASIC "DOS" command.  Great for
+old-school loading of OS9 ( or CoCoBoot ) located on any particular
+HDBDOS device/disk/partition.  It loads the selected device/drive's
+boot track to $2600 and boots it.
+
+"HDB LOADER" loads up one of the 17 flavors of HDBDOS and sets it up
+with the given device/drive/offsets.  Very convenient for boot
+DriveWire.
+
+
+
+  
+
+ 

@@ -102,6 +102,14 @@ include menu.fs
     #' R
     str "rEBOOT"
 
+    
+: bootnow
+    noop
+    menu
+    confirm_draw
+    # 0
+    #' B
+    str "bOOT NOW"
 
 : modprof ( -- a ) \ data address of selected profile
     dovar # 0
@@ -125,8 +133,10 @@ include menu.fs
     getprof pro_defid ;
 : getnoauto ( -- a ) \ get no autoboot flag
     getprof pro_noauto ;
+: gethdbname ( -- a ) \ get AUTOEXEC name field
+    getprof pro_hdbname ;
 
-: tag 
+: tag
     getprof
     text_select
     text_draw
@@ -134,6 +144,24 @@ include menu.fs
     #' T
     str "tAG: "
     # 14
+
+: hdbname
+    gethdbname
+    text_select
+    text_draw
+    # 0
+    #' N
+    str "AUTOEXEC nAME: "
+    # 8
+
+: bootname
+    gethdbname
+    text_select
+    text_draw
+    # 0
+    #' B
+    str "bOOTFILE: "
+    # 8
 
 : driveno
     getdrive
@@ -307,6 +335,7 @@ include menu.fs
     hdboffset
     defid
     noauto
+    hdbname
     # 0
 
 : os9
@@ -324,6 +353,7 @@ include menu.fs
     hdboffset
     defid
     driveno
+    bootname
     # 0    
 
 : profile_select
@@ -352,7 +382,7 @@ include menu.fs
 
 \ profile object
 : profile1
-    # 30
+    # 32
     profile_select
     profile_draw
     # 0
@@ -361,7 +391,7 @@ include menu.fs
 
 \ profile object
 : profile2
-    # 60
+    # 64
     profile_select
     profile_draw
     # 0
@@ -370,7 +400,7 @@ include menu.fs
 
 \ profile object
 : profile3
-    # 90
+    # 96
     profile_select
     profile_draw
     # 0
@@ -420,6 +450,7 @@ include menu.fs
     writeconf
     loadconf
     reboot
+    bootnow
 \   debug
     exam
     # 0

@@ -255,7 +255,9 @@ include out.fs
 : text_select ( -- f ) \ text select method
     pos@ clsline pos@ 
     label type
+    0 11a p!
     data union @ accept
+    ff 11a p!
     false
  ;
 

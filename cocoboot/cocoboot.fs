@@ -149,7 +149,7 @@ include rofs.fs
 
 
 : profs ( -- a ) \ 1st profile slot
-    bpb @ 40 + ;
+    bpb @ 30 + ;
 
 \ 
 \ and the Boot profile structure
@@ -169,11 +169,12 @@ include rofs.fs
     20 + ;
 : pro_offset ( profile -- a ) \ HDB offset
     22 + ;  \ 3 bytes !
-: pro_defid  ( profile -- a ) \ HDB Default SCSI ID
+: pro_defid  ( profile -- a ) \ HDB Default device number
     25 + ;  \ 1 bytes
-: pro_noauto \ ( profile -a ) \ HDB defeat autoboot flag
+: pro_noauto \ ( profile - a ) \ HDB defeat autoboot flag
     26 + ;  \ flag
-
+: pro_hdbname \ ( profile - a ) \ autoexec file name size = 8 chars + 2 count
+    28 + ;            
 
 : .emit ( -- ) \ emits a "."
    2e emit ;    
@@ -198,7 +199,6 @@ include rofs.fs
 \ *************************
 
 
-\ wrong address.. there could be something loaded at 1000!!!
 : drom ( u -- ) \ load slot u in rom and execute
     sys @ 0= if toram
     else 0 ffdf p! then         \ if coco2 then copy rom to ram
@@ -223,10 +223,22 @@ include rofs.fs
    ddfb begin dup pw@ 4155 = if 2121 swap pw! exit then 1+ again
 ;
 
+: patchAuto ( profile -- ) \ patch in autoexec filename in to hdb
+    \ find start of "AUTOEXEC" in HDB image
+    ddfb begin dup pw@ 4155 = if ( pro pa )
+	    \ blank out old string
+	    dup p> 2020 !+ 2020 !+ 2020 !+ 2020 !+ drop
+	    \ copy string
+	    push pro_hdbname @+ push >p pull pull swap mv
+	    exit
+	then 1+ again
+;
+
 
 : dexec ( -- ) \ execute drom setup code ( reboots to loaded HDB )
-   c002 exem ;
-
+    \ patch HDB to stop from clearing IDNUM
+    d93f begin dup pw@ 0900 - while 1+ repeat 08 swap p!
+    c002 exem ;
 
 : dromoff ( -- u ) \ slot offset to disk roms
    3 ;
@@ -247,16 +259,23 @@ include rofs.fs
     dup pro_hwaddr @ d93b pw!
     \ fixup the HDB os9 offset
     dup pro_offset c@+ d938 p! @ d939 pw!
-    \ fixup the Default ID
-    dup pro_defid c@ d93e p!
-    \ defeat autoboot?
-    dup pro_noauto @ if defauto then
+    \ fixup the Default ID    
+    dup pro_defid c@ dup dup  d93e p! 151 p! 14f p!
+    \ auto booting
+    dup pro_noauto @ 0= if
+	\ patch up AUTOEXEC boot name 
+	dup pro_hdbname @ if dup patchAuto then
+    else
+	\ defeat autoboot?
+	defauto
+    then
     drop ioff
 ;
 
 
 
 : bootdrom ( profile -- ) \ boot drom
+    \ switch into new hdbdos
     dup HDBSwitch
     \ quit bye reiniting HDBDOS
     dexec
@@ -305,7 +324,7 @@ include rofs.fs
 
 : boot ( u -- ) \ boot profile number
     push
-    0 r@ for 30 + next profs +
+    0 r@ for 32 + next profs +
     slit str "BOOTING " type
     dup type cr
     dup pro_method @ 
@@ -324,11 +343,11 @@ include rofs.fs
   cr
   profs
   slit str "0 - " type dup type cr
-  30 +
+  32 +
   slit str "1 - " type dup type cr
-  30 +
+  32 +
   slit str "2 - " type dup type cr
-  30 + 
+  32 + 
   slit str "3 - " type dup type cr
   drop
   slit str "S - SETUP" type cr

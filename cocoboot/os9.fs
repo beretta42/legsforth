@@ -312,7 +312,7 @@ c	4	inode number
     \ initialize memory
     meminit
     \ load up the HDB context
-    drop dup HDBSwitch cr
+    drop dup HDBSwitch cr          ( a )
     \ Now we further patch HDB to make a proper
     \ init routine.
     
@@ -337,11 +337,12 @@ c	4	inode number
     slit str "INSRT ROOT, ANY KEY" type key drop cr
     mount
     if slit str "MOUNT FAILED" type cr true panic then
-    \ wdir pdir
-    \ change working dir to "/CCB"
-    \ slit str "CCB" chdir 
-    \ if slit str "/CCB DOES NOT EXIST" type cr true panic then
 
+    \ check boot file is in root?
+     dup pro_hdbname wdir lookup 0= if
+    	slit str "BOOTFILE NOT FOUND" type cr true panic then 2drop
+    
+    
     \ load up the ccbkrn file
     
     slit str "ccbkrn" wdir lookup 0= if
@@ -359,8 +360,9 @@ c	4	inode number
     \ load up the OS9Boot file
     1 ffa4 p!
     2 ffa5 p!
-    slit str "OS9Boot" wdir lookup 0= if
-	slit str "NO OS9BOOT ON ROOT" type cr true panic then
+    
+\    slit str "OS9Boot" wdir lookup 0= if cold then
+    dup pro_hdbname wdir lookup 0= if cold then
     falloc dup push fopen
     r@ fsize drop dup ff00 and swap ff and if 100 + then ( size )
     dup f000 swap - ( size pstart )

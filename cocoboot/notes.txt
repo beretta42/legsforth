@@ -406,3 +406,23 @@ conversion!! Yeah!
 
 
 F.sreqmem call: 0xf19e
+
+DCDRV
+DRVSEL
+IDNUM
+DEFID
+
+on boot:
+
+IDE: clears IDNUM
+SCSI: sets IDNUM to DEFID
+DW:  does nothing
+ALL: clears DRVSEL
+
+on dskcon:
+
+calc HDB from DCDRV DCTRK DCSEC
+
+IDE  uses  DRVSEL
+SCSI uses  DRVSEL
+DW   uses  IDNUM

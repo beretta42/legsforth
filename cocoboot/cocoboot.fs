@@ -171,7 +171,7 @@ include rofs.fs
     22 + ;  \ 3 bytes !
 : pro_defid  ( profile -- a ) \ HDB Default device number
     25 + ;  \ 1 bytes
-: pro_noauto \ ( profile - a ) \ HDB defeat autoboot flag
+: pro_noauto \ ( profile - a ) \ HDB defeat autoboot flag or OS9 deblock
     26 + ;  \ flag
 : pro_hdbname \ ( profile - a ) \ autoexec file name size = 8 chars + 2 count
     28 + ;            

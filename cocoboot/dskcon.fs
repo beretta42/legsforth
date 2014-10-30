@@ -54,7 +54,7 @@ Load up "daddr", "lsn" and "drive" variables and call read or write
   
 
 : read ( -- f ) \ load a sector via dskcon
-    2 dskgo ;  
+    2 dskgo ;
 
 : write ( -- f ) \ save a sector via dskcon
     3 dskgo ;

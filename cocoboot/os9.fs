@@ -58,11 +58,34 @@ include hdb.fs
 \ When in HDB, its easiest to dynamically change
 \ "The Offset" to get full LSN access, rather
 \ then depend on a whole mess of drive geometry changes!
-\ 
-: 9read ( l h -- ) \ read a sector
+\
+
+: deblockf ( -- a ) \ deblock flag
+    dovar # 0
+
+: 9readr ( l h -- ) \ read a sector without deblocking
     HDBOFF p> 3!
     0 lsn !
     read drop ;
+
+: 9readd ( l h -- ) \ read a sector with 512 sector deblocking
+    over push
+    daddr @ push
+    600 p> daddr !
+    dup shr push 
+    1 and if 8000 else 0 then
+    swap shr or pull
+    9readr
+    pull daddr !
+    pull 1 and if 700 else 600 then
+    daddr @ >p 100 mv
+;
+
+
+: 9read ( l h -- ) \ read a sector l h from drive
+    deblockf @ if 9readd else 9readr then
+;
+
 
 : meminit ( -- ) \ initialize forth memory
    1002 @ cp !                   \ set cp to overlay's cp
@@ -313,6 +336,8 @@ c	4	inode number
     meminit
     \ load up the HDB context
     drop dup HDBSwitch cr          ( a )
+    \ check for deblock and set local flag
+    dup pro_noauto @ deblockf !
     \ Now we further patch HDB to make a proper
     \ init routine.
     
@@ -338,11 +363,12 @@ c	4	inode number
     mount
     if slit str "MOUNT FAILED" type cr true panic then
 
-    \ check boot file is in root?
+    \ check boot file is in root before loading ccbkrn as
+    \ after touch upper memory, DECB and console will not be
+    \ available to us.
      dup pro_hdbname wdir lookup 0= if
     	slit str "BOOTFILE NOT FOUND" type cr true panic then 2drop
-    
-    
+        
     \ load up the ccbkrn file
     
     slit str "ccbkrn" wdir lookup 0= if
@@ -355,6 +381,7 @@ c	4	inode number
 
     llioff rammode
     \ copy ccbkrn to place in memory
+    \ we cannot use DECB console routines from here
     2600 f000 f00 mv
     
     \ load up the OS9Boot file
@@ -384,6 +411,8 @@ c	4	inode number
     0 p> 100 for 0 c!+ next drop
     \ make screen pointer
     8 6002 pw!
+    \ clear screen
+    6004 p> 1e0 for 2020 !+ next drop
     \ setup gimme & DP mirror
     ff90 gimme
     90 gimme

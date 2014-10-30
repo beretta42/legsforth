@@ -240,8 +240,8 @@ include menu.fs
     llist_select
     llist_draw
     # 0
-    #' D
-    str "dISK ROM IMAGE: "
+    #' R
+    str "DISK rOM IMAGE: "
     # 11
     str "CHS"
     str "DW3BC3"
@@ -288,7 +288,7 @@ include menu.fs
     lentry_draw
     # 0
     #' O
-    str "OS9 oFFSET: "
+    str "HDB oFFSET: "
 
 : defid
     getdefid
@@ -305,6 +305,14 @@ include menu.fs
     # 0
     #' U
     str "DISABLE AuTOBOOT: "
+
+: 9noauto
+    getnoauto
+    boolselect
+    booldraw
+    # 0
+    #' K
+    str "DEBLOCk HD: "
     
 : rom
     noop
@@ -350,9 +358,10 @@ include menu.fs
     slotno
     mpino
     hwaddr
-    hdboffset
+\    hdboffset
     defid
     driveno
+    9noauto
     bootname
     # 0    
 

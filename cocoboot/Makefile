@@ -43,7 +43,7 @@ DIFS= hdbchs.dif     	\
       hdblrtech.dif
 
 
-ALL: boot.dsk Makefile dw2dsk.wav dw2dsk.cas
+ALL: boot.dsk Makefile dw2dsk.wav dw2dsk.cas dw3bc3.rom
 
 boot.dsk: boot.img bpb.img setup.fi decb.rom $(DIFS) hdbutil.fi os9.fi
 	tools/rofs/rofs -x "COCOBOOT BOOT DISK" -f boot.dsk -b boot.img \
@@ -97,8 +97,21 @@ bpb.img:
 boot.img: base.img forth.slz
 	cat base.img forth.slz /dev/zero | dd bs=256 count=18 conv=sync of=boot.img
 
+
+dw3bc3.rom: ccb2.img ../../toolshed-code/hdbdos/hdbdw3bc3.rom
+	cp /home/beretta/C/toolshed-code/hdbdos/hdbdw3bc3.rom dw3bc3.rom
+	dd of=dw3bc3.rom bs=1 seek=12 if=ccb2.img conv=notrunc
+
+# this makes a patch file for hdbdos rom to boot to ccb from rom
+# apply patch at c00c.
+ccb2.img: dhead.img forth.slz
+	cat dhead.img forth.slz > ccb2.img
+
 base.img: cocoboot.def slz.asm run.slz rel.asm
 	$(AS) base.img -r rel.asm -s -lCCB.ls
+
+dhead.img: cocoboot.def slz.asm run.slz drom.asm
+	$(AS) dhead.img -r drom.asm -s -ldrom.ls
 
 run.slz: run.img
 	tools/slz/slz P run.img run.slz

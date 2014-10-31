@@ -364,13 +364,13 @@ include rofs.fs
 ;
 
 
-: main 
-    lit .emit sectvec !          \ save sector load xt
-    bkey? init_screen hello      \ detect key down and init screen
+: main
+    lit .emit sectvec !           \ save sector load xt
+    bkey? init_screen hello       \ detect key down and init screen
     c006 pw@ p> 1+ c@ drive c!    \ save boot drive no
-    mount  ?panic  		 \ mount rofs filesystem
-    init_bpb			 \ load boot parameter block
-    valid @ 0= if jmp setup then \ if bpb is invalid then setup
+    mount  ?panic  	    	  \ mount rofs filesystem
+    init_bpb			  \ load boot parameter block
+    valid @ 0= if jmp setup then  \ if bpb is invalid then setup
     \ if boot up key is pressed or autoboot disable then goto menu
     ccbnoauto @ or if jmp menu then
     \ wait for autoboot

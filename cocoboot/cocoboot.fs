@@ -292,9 +292,12 @@ include rofs.fs
 
 : bootrom ( profile -- ) \ boot rom
     \ set MPI switch
-    dup pro_mpino @ mpi  
-    \ set Super IDE flash no
-    dup pro_sideno @ over pro_hwaddr @ 9 + p!
+    dup pro_mpino @ mpi
+    \ set ROM bank
+    dup pro_hdbname @ dup if
+	push dup pro_sideno @ over pro_hwaddr @ pull 1 = if 9 else 3 then
+	+ p!
+    else drop then
     \ Reset GIMME if a coco3 and goto rom mapping
     sys @ if cc ff90 p! then rommode 
     \ do a cold reboot

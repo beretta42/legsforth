@@ -268,11 +268,27 @@ include menu.fs
     # 0
     #' F
     str "fLASH ROM BANK: "
-    # 4
+    # 8
     str "0"
     str "1"
     str "2"
     str "3"
+    str "4 SDC ONLY"
+    str "5 SDC ONLY"
+    str "6 SDC ONLY"
+    str "7 SDC ONLY"
+
+: rombanker
+    gethdbname
+    list_select
+    list_draw
+    # 0
+    #' B
+    str "bANKER TYPE: "
+    # 3
+    str "NONE"
+    str "SUPER IDE"
+    str "SDC"
 
 : hwaddr
     gethwaddr
@@ -324,6 +340,7 @@ include menu.fs
     bmeth
     tag
     mpino
+    rombanker
     hwaddr
     bankno
     # 0

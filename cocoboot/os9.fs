@@ -367,7 +367,12 @@ c	4	inode number
     \ after touch upper memory, DECB and console will not be
     \ available to us.
      dup pro_hdbname wdir lookup 0= if
-    	slit str "BOOTFILE NOT FOUND" type cr true panic then 2drop
+	 slit str "BOOTFILE NOT FOUND" type cr true panic then
+     falloc dup push fopen r@ fsize
+     if slit str "BOOTFILE WAY TOO BIG" type cr true panic then
+     dup 7000 swap u< if slit str "BOOTFILE TOO BIG" type cr true panic then
+     3000 u< if slit str "BOOTFILE TOO SMALL" type cr true panic then
+     pull drop
         
     \ load up the ccbkrn file
     

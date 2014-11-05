@@ -147,7 +147,6 @@ include rofs.fs
 : ccbnoauto ( -- a ) \ no autoboot flag
     bpb @ a + ;
 
-
 : profs ( -- a ) \ 1st profile slot
     bpb @ 30 + ;
 
@@ -173,8 +172,10 @@ include rofs.fs
     25 + ;  \ 1 bytes
 : pro_noauto \ ( profile - a ) \ HDB defeat autoboot flag or OS9 deblock
     26 + ;  \ flag
+: pro_pflags \ ( profile - a )  \ pause for root flage
+    28 + ;  
 : pro_hdbname \ ( profile - a ) \ autoexec file name size = 8 chars + 2 count
-    28 + ;            
+    2a + ;            
 
 : .emit ( -- ) \ emits a "."
    2e emit ;    
@@ -327,7 +328,7 @@ include rofs.fs
 
 : boot ( u -- ) \ boot profile number
     push
-    0 r@ for 32 + next profs +
+    0 r@ for 34 + next profs +
     slit str "BOOTING " type
     dup type cr
     dup pro_method @ 
@@ -343,17 +344,23 @@ include rofs.fs
 
 
 : menu ( -- )
-  cr
-  profs
-  slit str "0 - " type dup type cr
-  32 +
-  slit str "1 - " type dup type cr
-  32 +
-  slit str "2 - " type dup type cr
-  32 + 
+    cr
+    profs
+    slit str "0 - " type dup type cr
+    34 +
+    slit str "1 - " type dup type cr
+    34 +
+    slit str "2 - " type dup type cr
+    34 + 
     slit str "3 - " type dup type cr
-    32 +
+    34 +
     slit str "4 - " type dup type cr
+    34 +
+    slit str "5 - " type dup type cr
+    34 + 
+    slit str "6 - " type dup type cr
+    34 +
+    slit str "7 - " type dup type cr
   drop
     slit str "S - SETUP" type cr
     slit str "X - DEFAULT" type cr
@@ -365,8 +372,11 @@ include rofs.fs
     dup 32 = if drop 2 jmp boot else
     dup 33 = if drop 3 jmp boot else
     dup 34 = if drop 4 jmp boot else
+    dup 35 = if drop 5 jmp boot else
+    dup 36 = if drop 6 jmp boot else
+    dup 37 = if drop 7 jmp boot else
     dup 58 = if drop defpro @ jmp boot else		
-    then then then then then then then
+    then then then then then then then then then then
     drop
   again
 ;

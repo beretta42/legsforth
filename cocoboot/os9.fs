@@ -358,14 +358,19 @@ c	4	inode number
     \ reset DSKCON trk/sec, we don't use them
     \ we'll directly mangle HDBOFF instead
     0 drive c!
+    \ check for root pause setting in profile
+    dup pro_pflags @ if
+	slit str "INSRT ROOT, ANY KEY" type key drop cr
+    then
     \ try to mount the RBF
-    slit str "INSRT ROOT, ANY KEY" type key drop cr
     mount
     if slit str "MOUNT FAILED" type cr true panic then
 
     \ check boot file is in root before loading ccbkrn as
     \ after touch upper memory, DECB and console will not be
     \ available to us.
+    \ dup dump drop key drop
+    \ dup pro_hdbname dump drop key drop
      dup pro_hdbname wdir lookup 0= if
 	 slit str "BOOTFILE NOT FOUND" type cr true panic then
      falloc dup push fopen r@ fsize
@@ -373,8 +378,9 @@ c	4	inode number
      dup 7000 swap u< if slit str "BOOTFILE TOO BIG" type cr true panic then
      3000 u< if slit str "BOOTFILE TOO SMALL" type cr true panic then
      pull drop
-        
-    \ load up the ccbkrn file
+
+
+    \ Find the ccbkrn file
     
     slit str "ccbkrn" wdir lookup 0= if
 	slit str "NO CCBKRN ON ROOT" type cr true panic then
@@ -388,13 +394,13 @@ c	4	inode number
     \ copy ccbkrn to place in memory
     \ we cannot use DECB console routines from here
     2600 f000 f00 mv
-    
+
     \ load up the OS9Boot file
     1 ffa4 p!
     2 ffa5 p!
     
 \    slit str "OS9Boot" wdir lookup 0= if cold then
-    dup pro_hdbname wdir lookup 0= if cold then
+    dup pro_hdbname wdir lookup 0= if true panic then
     falloc dup push fopen
     r@ fsize drop dup ff00 and swap ff and if 100 + then ( size )
     dup f000 swap - ( size pstart )

@@ -52,11 +52,15 @@ include menu.fs
    # 0 
    #' D
    str "dEFAULT PROFILE: "
-   # 4
+   # 8
    str "0"
    str "1"
    str "2"
    str "3"
+   str "4"
+   str "5"
+   str "6"
+   str "7"
 
 
 : save_bpb ( -- ) \ save bpb to disk
@@ -133,6 +137,8 @@ include menu.fs
     getprof pro_defid ;
 : getnoauto ( -- a ) \ get no autoboot flag
     getprof pro_noauto ;
+: getpflags ( -- a ) \ get flag addr for profile
+    getprof pro_pflags ;
 : gethdbname ( -- a ) \ get AUTOEXEC name field
     getprof pro_hdbname ;
 
@@ -183,6 +189,14 @@ include menu.fs
     str "2"
     str "3"
     str "4"
+
+: pause
+    getpflags
+    boolselect
+    booldraw
+    # 0
+    #' P
+    str "pAUSE FOR ROOT: "
 
 
 \ this table is dynamically filled with object
@@ -384,6 +398,7 @@ include menu.fs
     driveno
     9noauto
     bootname
+    pause
     # 0    
 
 : profile_select
@@ -393,7 +408,7 @@ include menu.fs
 
 : profile_draw
     pos!
-    label type space
+    label type
     88 pw@ ascii over p! 1+ 88 pw!	
     space
     self @ profs + modprof ! 
@@ -408,44 +423,67 @@ include menu.fs
     profile_draw
     # 0
     #' 0
-    str " PROFILE"
+    str ""
 
 \ profile object
 : profile1
-    # 32
+    # 34
     profile_select
     profile_draw
     # 0
     #' 1
-    str " PROFILE"
+    str ""
 
 \ profile object
 : profile2
-    # 64
+    # 68
     profile_select
     profile_draw
     # 0
     #' 2
-    str " PROFILE"
+    str ""
 
 \ profile object
 : profile3
-    # 96
+    # 9c
     profile_select
     profile_draw
     # 0
     #' 3
-    str " PROFILE"
+    str ""
 
     \ profile object
 : profile4
-    # c8
+    # d0
     profile_select
     profile_draw
     # 0
     #' 4
-    str " PROFILE"
+    str ""
 
+: profile5
+    # 104
+    profile_select
+    profile_draw
+    # 0
+    #' 5
+    str ""
+
+: profile6
+    # 138
+    profile_select
+    profile_draw
+    # 0
+    #' 6
+    str ""
+
+: profile7
+    # 16c
+    profile_select
+    profile_draw
+    # 0
+    #' 7
+    str ""
 
 : l100
    14 dofile ;
@@ -469,6 +507,47 @@ include menu.fs
     #' E
     str "DeBUG INFO"
 
+: cpprof_select
+    5a0 88 pw! 
+    slit str "SRC: " type dup dup sp@ dup 2 naccept >num nip nip space
+    slit str "DST: " type dup dup sp@ dup 2 naccept >num nip nip cr
+    slit str "REALLY COPY? (y)" type key 59 = if ( s d )
+	\ change dest into primitive address
+	0 swap for 34 + next profs + >p
+	swap
+	0 swap for 34 + next profs + >p
+	swap
+	32 mv
+    then
+    true \ redraw parent menu
+;
+
+: delete_select
+    5a0 88 pw!
+    slit str "DELETE NO: " type dup dup sp@ dup 2 naccept >num nip nip cr
+    slit str "REALLY DELETE? " type key 59 = if
+	0 swap for 34 + next profs + 32 for 0 c!+ next drop
+    then
+    true
+;
+
+: delprof
+    noop
+    delete_select
+    confirm_draw
+    # 0
+    #' Z
+    str "zERO PROFILE"
+    
+\ copy profile
+: cpprof
+    noop
+    cpprof_select
+    confirm_draw
+    # 0
+    #' C
+    str "cOPY"
+    
 \ Edit profiles sub menu    
 : editprofiles
     noop
@@ -482,6 +561,11 @@ include menu.fs
     profile2
     profile3
     profile4
+    profile5
+    profile6
+    profile7
+    cpprof
+    delprof
     # 0
 
 \ Main menu object

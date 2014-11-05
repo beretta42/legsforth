@@ -437,6 +437,15 @@ include menu.fs
     #' 3
     str " PROFILE"
 
+    \ profile object
+: profile4
+    # c8
+    profile_select
+    profile_draw
+    # 0
+    #' 4
+    str " PROFILE"
+
 
 : l100
    14 dofile ;
@@ -460,6 +469,20 @@ include menu.fs
     #' E
     str "DeBUG INFO"
 
+\ Edit profiles sub menu    
+: editprofiles
+    noop
+    menu_select
+    menu_draw
+    # 0
+    #' E
+    str "PROFILE eDITOR"
+    profile0
+    profile1
+    profile2
+    profile3
+    profile4
+    # 0
 
 \ Main menu object
 : main
@@ -473,10 +496,11 @@ include menu.fs
     timeo
     noautof
     defprofile
-    profile0
-    profile1
-    profile2
-    profile3
+ \   profile0
+ \   profile1
+ \   profile2
+    \   profile3
+    editprofiles
     writeconf
     loadconf
     reboot

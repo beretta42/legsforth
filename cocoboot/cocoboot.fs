@@ -351,9 +351,12 @@ include rofs.fs
   32 +
   slit str "2 - " type dup type cr
   32 + 
-  slit str "3 - " type dup type cr
+    slit str "3 - " type dup type cr
+    32 +
+    slit str "4 - " type dup type cr
   drop
-  slit str "S - SETUP" type cr
+    slit str "S - SETUP" type cr
+    slit str "X - DEFAULT" type cr
   begin
     key
     dup 53 = if drop jmp setup else
@@ -361,7 +364,9 @@ include rofs.fs
     dup 31 = if drop 1 jmp boot else
     dup 32 = if drop 2 jmp boot else
     dup 33 = if drop 3 jmp boot else
-    then then then then then
+    dup 34 = if drop 4 jmp boot else
+    dup 58 = if drop defpro @ jmp boot else		
+    then then then then then then then
     drop
   again
 ;

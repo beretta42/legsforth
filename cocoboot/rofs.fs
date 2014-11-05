@@ -52,7 +52,7 @@ a bit tighter on a small volume.
     next false
 ;
 
-: save ( addr u -- f ) \ load slot u to address
+: save ( addr u -- f ) \ save address to slot u
     shl shl shl 8 + super @ + 
     @+ lsn ! 
     @ swap daddr !
@@ -62,6 +62,9 @@ a bit tighter on a small volume.
     daddr @ 100 + daddr !
     next false
 ;
+
+
+
 
 \ This is not complete, it should do something
 \ if the load fails!

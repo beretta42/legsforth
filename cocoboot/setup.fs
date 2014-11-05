@@ -278,8 +278,12 @@ include menu.fs
     str "6 SDC ONLY"
     str "7 SDC ONLY"
 
+
+    \ This big-time interfers with
+    \ the setup program itself - reusing the
+    \ hdbname profile field is dumb.
 : rombanker
-    gethdbname
+    gethdbname    \ <--- change this
     list_select
     list_draw
     # 0

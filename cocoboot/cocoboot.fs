@@ -125,7 +125,7 @@ include rofs.fs
    bpb @ 0 load ?panic ;
 
 : init_bpb ( -- ) \ initialize the boot parameter block
-    100 alloc bpb !    \ allocate space for bpb
+    200 alloc bpb !    \ allocate space for bpb
     load_bpb
 ;
 

@@ -92,15 +92,11 @@ os9.fi: *.fs
 	$(BFC) -cso os9.fi cocoboot.fs os9.fs
 
 bpb.img: 
-	cat /dev/zero | dd bs=256 count=1 of=bpb.img	
+	cat /dev/zero | dd bs=512 count=1 of=bpb.img	
 
 boot.img: base.img forth.slz
 	cat base.img forth.slz /dev/zero | dd bs=256 count=18 conv=sync of=boot.img
 
-
-dw3bc3.rom: ccb2.img ../../toolshed-code/hdbdos/hdbdw3bc3.rom
-	cp /home/beretta/C/toolshed-code/hdbdos/hdbdw3bc3.rom dw3bc3.rom
-	dd of=dw3bc3.rom bs=1 seek=12 if=ccb2.img conv=notrunc
 
 # this makes a patch file for hdbdos rom to boot to ccb from rom
 # apply patch at c00c.

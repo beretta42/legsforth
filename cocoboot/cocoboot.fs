@@ -34,7 +34,6 @@ include debug.fs
 include dskcon.fs
 include rofs.fs
 
-
 : hello
     slit str "COCOBOOT2" type cr ;
 
@@ -57,24 +56,6 @@ include rofs.fs
 : bpb ( -- a ) \ boot parameter block data ptr
     18 ;
 
-
-
-\ *************************
-\ Boottrack loading
-\ *************************
-
-: dos ( u -- ) \ chain load from drive u
-   drive c!
-   2600 p> daddr !
-   264 lsn !
-   12 for
-      read ?panic
-      lsn @ 1+ lsn !
-      daddr @ 100 + daddr !	       
-   next 
-   2600 pw@ 4f53 = if 2602 exem then
-   slit str "NO DOS FOUND!" type cr key drop
-;
 
 
 \ **************************
@@ -283,12 +264,52 @@ include rofs.fs
 ;
 
 
+\ *************************
+\ Boottrack loading
+\ *************************
+
+: dos ( a u -- ) \ chain load from drive u
+    drop                             ( prof )
+    \ swap in choosen HDB and init
+    dup HDBSwitch
+    \ find loc of warm start address in setup routine
+    \ and replace with NOP to restrict HDBINIT to RTS to US
+    d93f begin dup pw@ a0e2 - while 1+ repeat 2 + p>
+    12 c!+ 12 c!+ drop
+    \ find call to BEEP that doesn't work without the Standard
+    \ IRQ handler, and write a rts instead. cut the init routine short.
+    \ that's fine, it just call BASIC to autoboot, anyway.
+    d93f begin dup pw@ d934 pw@ - while 1+ repeat 1 -
+    39 swap p!
+    \ and find and execute HDINIT in HDB
+    d93f begin dup pw@ 0900 - while 1+ repeat 1 - exem
+    \ set HDB's IDNUM
+    dup pro_drive c@ 151 p!
+
+    
+    slit str "rdy?" type key drop
+    dup pro_drive c@ dup bemit drive c!
+    2600 p> daddr !
+    264 lsn !
+    12 for 2e emit
+      read ?panic
+      lsn @ 1+ lsn !
+      daddr @ 100 + daddr !	       
+   next 
+   2600 pw@ 4f53 = if slit str "found!" type key drop 2602 exem then
+   slit str "NO DOS FOUND!" type cr key drop
+;
+
+
+
+
 
 \ *************************
 \ ROM / Super IDE flash boot
 \ *************************
 
 : cold ( -- ) \ cold reboot coco
+    0 mpi
     0 71 p! fffe pw@ exem ;
 
 : bootrom ( profile -- ) \ boot rom
@@ -332,11 +353,11 @@ include rofs.fs
     slit str "BOOTING " type
     dup type cr
     dup pro_method @ 
-      dup 0=  if over pro_drive c@ dup bemit dos else
+      dup 0=  if drop r@ dos else
       dup 1 = if drop bootdrom else
       dup 2 = if drop bootrom else
       dup 3 = if drop r@ bootos9 else
-      then then then
+      then then then then
       4 ?panic
 ;
 

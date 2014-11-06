@@ -30,16 +30,16 @@ nodict		      \ no dictionary to be compiled to target
 
 include ccbimp.fs
 include out.fs
-include debug.fs
+\ include debug.fs   \ commented out for size :(
 include dskcon.fs
 include rofs.fs
+include ticker.fs
 
 : hello
     slit str "COCOBOOT2" type cr ;
 
-
 : ?panic ( u -- ) \ issue error and panic
-   dup if wemit slit str " PANIC!" type loop else drop then ;
+   dup if wemit slit str " PANIC!" type else drop then ;
 
 : width40 ( -- ) \ change to 40 column mode
    f65c exem ;
@@ -182,6 +182,7 @@ include rofs.fs
 
 
 : drom ( u -- ) \ load slot u in rom and execute
+    1 dpReset
     sys @ 0= if toram
     else 0 ffdf p! then         \ if coco2 then copy rom to ram
     1000 p> 2 load ?panic
@@ -337,6 +338,7 @@ include rofs.fs
 : bootos9 ( a u -- ) \ takes profile address and index no
     \ os9 boot will soon be bigger than
     \ this kernel can be, so chain-load the os9 boot forth image
+    2 dpReset
    15 dofile     
 ;
 
@@ -404,7 +406,8 @@ include rofs.fs
 
 
 : main
-    lit .emit sectvec !           \ save sector load xt
+    lit dpTick sectvec !
+\   lit .emit sectvec !           \ save sector load xt
     bkey? init_screen hello       \ detect key down and init screen
     c006 pw@ p> 1+ c@ drive c!    \ save boot drive no
     mount  ?panic  	    	  \ mount rofs filesystem

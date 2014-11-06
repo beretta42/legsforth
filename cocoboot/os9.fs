@@ -23,12 +23,15 @@ This is the new-style os9 booter overlay file
 
 )
 
-1000 setorg
+1400 setorg
 
 include 3var.fs
 include 2var.fs
 include debug.fs
 include hdb.fs
+include ticker.fs
+
+
 
 : 9type ( a -- "string" ) \ emit a os9 formatted string	
    begin c@+ dup 7f and emit 80 and until drop ;
@@ -379,6 +382,7 @@ c	4	inode number
      3000 u< if slit str "BOOTFILE TOO SMALL" type cr true panic then
      pull drop
 
+     1 dpReset
 
     \ Find the ccbkrn file
     
@@ -388,13 +392,16 @@ c	4	inode number
 
     \ load up CCBKRN file
     2600 p>
-    begin r@ fnext while dup r@ fget 100 + repeat drop
+    begin r@ fnext while dup r@ fget dpTick 100 + repeat drop
 
+   
     llioff rammode
     \ copy ccbkrn to place in memory
     \ we cannot use DECB console routines from here
     2600 f000 f00 mv
 
+    4 dpReset
+    
     \ load up the OS9Boot file
     1 ffa4 p!
     2 ffa5 p!
@@ -405,13 +412,13 @@ c	4	inode number
     r@ fsize drop dup ff00 and swap ff and if 100 + then ( size )
     dup f000 swap - ( size pstart )
     \ put OS9Boot parts below C000 directly into memory
-    p> begin dup >p c000 - while dup r@ fget 100 + repeat drop ( z )
+    p> begin dup >p c000 - while dup r@ fget dpTick 100 + repeat drop ( z )
     \ we can't overwrite disk basic while we're loading so
     \ put OS9Boot parts in C000 - E000 into temp area for copying
     \ to place after finishing up loading
-    1000 p> begin dup >p 3000 - while dup r@ fget 100 + repeat drop ( z )
+    1000 p> begin dup >p 3000 - while dup r@ fget dpTick 100 + repeat drop ( z )
     \ and put OS9Boot part in E000 - F000 directly into memory
-    e000 p> begin dup >p f000 - while dup r@ fget 100 + repeat drop ( z )
+    e000 p> begin dup >p f000 - while dup r@ fget dpTick 100 + repeat drop ( z )
     \ we're done with disk basic now, so copy the c000 block into memory
     3 ffa6 p!
     1000 c000 2000 mv

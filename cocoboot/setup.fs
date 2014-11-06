@@ -23,7 +23,7 @@
 \
 \ ******************************************
 
-1000 setorg
+1400 setorg
 
 include menu.fs
 
@@ -227,22 +227,6 @@ include menu.fs
     str "EXTERNAL ROM"
     str "OS9"
 
-\
-\ chain loading object
-\
-
-: chain
-    noop
-    menu_select
-    menu_draw
-    # 0
-    #' 0
-    str "MODIFY PROFILE"
-    bmeth
-    tag
-    driveno    
-    # 0
-
 
 \ 
 \ Disk rom loading object
@@ -399,7 +383,33 @@ include menu.fs
     9noauto
     bootname
     pause
-    # 0    
+    # 0
+
+\
+\ chain loading object
+\   this does a cross-device DOS command
+\   yes this will load os9 the old fashioned way,
+\   but the OS9 must be setup for /DD to be
+\   where ever it's at!!! (if not drive 0 )
+\
+
+: chain
+    noop
+    menu_select
+    menu_draw
+    # 0
+    #' 0
+    str "MODIFY PROFILE"
+    bmeth
+    tag
+    slotno
+    mpino
+    hwaddr
+    hdboffset
+    defid
+    driveno    
+    # 0
+
 
 : profile_select
     self @ profs + modprof !

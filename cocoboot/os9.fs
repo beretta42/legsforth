@@ -29,8 +29,6 @@ include 3var.fs
 include 2var.fs
 include debug.fs
 include hdb.fs
-include ticker.fs
-
 
 
 : 9type ( a -- "string" ) \ emit a os9 formatted string	
@@ -91,7 +89,7 @@ include ticker.fs
 
 
 : meminit ( -- ) \ initialize forth memory
-   1002 @ cp !                   \ set cp to overlay's cp
+   1402 @ cp !                   \ set cp to overlay's cp
 ;
 
 
@@ -430,7 +428,7 @@ c	4	inode number
     \ make screen pointer
     8 6002 pw!
     \ clear screen
-    6004 p> 1e0 for 2020 !+ next drop
+    \ 6004 p> 1e0 for 2020 !+ next drop
     \ setup gimme & DP mirror
     ff90 gimme
     90 gimme

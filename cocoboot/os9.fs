@@ -380,6 +380,7 @@ c	4	inode number
      3000 u< if slit str "BOOTFILE TOO SMALL" type cr true panic then
      pull drop
 
+     slit str "CCBKRN" dpSetLabel
      1 dpReset
 
     \ Find the ccbkrn file
@@ -398,6 +399,7 @@ c	4	inode number
     \ we cannot use DECB console routines from here
     2600 f000 f00 mv
 
+    slit str "OS9BOOT" dpSetLabel
     4 dpReset
     
     \ load up the OS9Boot file

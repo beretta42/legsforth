@@ -506,6 +506,18 @@ include menu.fs
     #' X
     str "HDB ExAM"
 
+
+: lupdate
+    16 dofile ;
+: update
+    lupdate
+    button_select
+    confirm_draw
+    # 0
+    #' U
+    str "uPDATE"
+
+    
 \ prints some debug info
 : dvec
     15 dofile ;
@@ -599,6 +611,7 @@ include menu.fs
     loadconf
     reboot
     bootnow
+    update
 \   debug
     exam
     # 0

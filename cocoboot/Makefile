@@ -45,7 +45,7 @@ DIFS= hdbchs.dif     	\
 
 ALL: boot.dsk Makefile dw2dsk.wav dw2dsk.cas dw3bc3.rom
 
-boot.dsk: boot.img bpb.img setup.fi decb.rom $(DIFS) hdbutil.fi os9.fi
+boot.dsk: boot.img bpb.img setup.fi decb.rom $(DIFS) hdbutil.fi os9.fi update.fi
 	tools/rofs/rofs -x "COCOBOOT BOOT DISK" -f boot.dsk -b boot.img \
 bpb.img				\
 setup.fi 			\
@@ -69,7 +69,7 @@ images/hdbdw4cc2.dif		\
 images/hdblrtech.dif		\
 hdbutil.fi			\
 os9.fi				\
-
+update.fi                       \
 
 
 
@@ -90,6 +90,9 @@ hdbutil.fi: *.fs
 
 os9.fi: *.fs
 	$(BFC) -cso os9.fi cocoboot.fs os9.fs
+
+update.fi: *.fs
+	$(BFC) -cso update.fi cocoboot.fs update.fs
 
 bpb.img: 
 	cat /dev/zero | dd bs=512 count=1 of=bpb.img	

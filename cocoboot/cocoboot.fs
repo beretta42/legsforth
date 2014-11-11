@@ -156,7 +156,7 @@ include ticker.fs
 : pro_pflags \ ( profile - a )  \ pause for root flage
     28 + ;  
 : pro_hdbname \ ( profile - a ) \ autoexec file name size = 8 chars + 2 count
-    2a + ;            
+    2a + ;
 
 : .emit ( -- ) \ emits a "."
    2e emit ;    
@@ -181,7 +181,7 @@ include ticker.fs
 \ *************************
 
 
-: drom ( u -- ) \ load slot u in rom and execute
+: drom ( u -- ) \ load slot u in te
     1 dpReset
     sys @ 0= if toram
     else 0 ffdf p! then         \ if coco2 then copy rom to ram

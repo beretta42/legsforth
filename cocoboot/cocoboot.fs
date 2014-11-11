@@ -133,36 +133,28 @@ include ticker.fs
 
 \ 
 \ and the Boot profile structure
-\ 
+\
 
-: pro_method ( profile -- a ) \  method varible
-    16 + ;  
-: pro_drive  ( profile -- a ) \  drive no. variable
-    18 + ;  \ only need 1 byte here !!!
-: pro_slotno ( profile -- a ) \ slot number for loading
-    1a + ;
-: pro_mpino ( profile -- a ) \ slot number for mpi
-    1c + ;
-: pro_sideno ( profile -- a ) \ super IDE flash rom bank no
-    1e + ;
-: pro_hwaddr ( profile -- a ) \ device base address
-    20 + ;
-: pro_offset ( profile -- a ) \ HDB offset
-    22 + ;  \ 3 bytes !
-: pro_defid  ( profile -- a ) \ HDB Default device number
-    25 + ;  \ 1 bytes
-: pro_noauto \ ( profile - a ) \ HDB defeat autoboot flag or OS9 deblock
-    26 + ;  \ flag
-: pro_pflags \ ( profile - a )  \ pause for root flage
-    28 + ;  
-: pro_hdbname \ ( profile - a ) \ autoexec file name size = 8 chars + 2 count
-    2a + ;
-
-: .emit ( -- ) \ emits a "."
-   2e emit ;    
+16
+2    field pro_method  \ which boot method to use
+2    field pro_drive   \ drive no
+2    field pro_slotno  \ which flavor of HDB to use
+2    field pro_mpino   \ mpi switch setting
+2    field pro_sideno  \ flash bank to use
+2    field pro_hwaddr  \ HDB hardware base address
+3    field pro_offset  \ HDB partition offset
+1    field pro_defid   \ HDB default ID
+2    field pro_noauto  \ HDB autoboot defeat flag
+2    field pro_pflags  \ Pause for Boot / Flags
+a    field pro_hdbname \ HDB autoexec file name
+struct profileZ        \ size of this structure
 
 \ end of bpb structure **************************
+    
+: prof2a ( u -- a ) \ get data address for profile struct u
+    0 swap for profileZ + next profs + ;
 
+    
 \ ************************
 \ Changing MPI Switch setting and Super IDE Flash
 \ ************************
@@ -350,8 +342,7 @@ include ticker.fs
 \    u = boot profile number
 
 : boot ( u -- ) \ boot profile number
-    push
-    0 r@ for 34 + next profs +
+    prof2a
     slit str "BOOTING " type
     dup type cr
     dup pro_method @ 
@@ -370,19 +361,19 @@ include ticker.fs
     cr
     profs
     slit str "0 - " type dup type cr
-    34 +
+    profileZ +
     slit str "1 - " type dup type cr
-    34 +
+    profileZ +
     slit str "2 - " type dup type cr
-    34 + 
+    profileZ + 
     slit str "3 - " type dup type cr
-    34 +
+    profileZ +
     slit str "4 - " type dup type cr
-    34 +
+    profileZ +
     slit str "5 - " type dup type cr
-    34 + 
+    profileZ + 
     slit str "6 - " type dup type cr
-    34 +
+    profileZ +
     slit str "7 - " type dup type cr
   drop
     slit str "S - SETUP" type cr
@@ -407,7 +398,6 @@ include ticker.fs
 
 : main
     lit dpTick sectvec !
-\   lit .emit sectvec !           \ save sector load xt
     bkey? init_screen hello       \ detect key down and init screen
     c006 pw@ p> 1+ c@ drive c!    \ save boot drive no
     mount  ?panic  	    	  \ mount rofs filesystem

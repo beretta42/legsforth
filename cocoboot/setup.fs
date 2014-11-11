@@ -535,11 +535,11 @@ include menu.fs
     slit str "DST: " type dup dup sp@ dup 2 naccept >num nip nip cr
     slit str "REALLY COPY? (y)" type key 59 = if ( s d )
 	\ change dest into primitive address
-	0 swap for 34 + next profs + >p
+	prof2a >p
 	swap
-	0 swap for 34 + next profs + >p
+	prof2a >p
 	swap
-	32 mv
+	profileZ mv
     then
     true \ redraw parent menu
 ;
@@ -548,10 +548,12 @@ include menu.fs
     5a0 88 pw!
     slit str "DELETE NO: " type dup dup sp@ dup 2 naccept >num nip nip cr
     slit str "REALLY DELETE? " type key 59 = if
-	0 swap for 34 + next profs + 32 for 0 c!+ next drop
+	prof2a profileZ for 0 c!+ next drop
     then
     true
 ;
+
+
 
 : delprof
     noop
@@ -602,17 +604,12 @@ include menu.fs
     timeo
     noautof
     defprofile
- \   profile0
- \   profile1
- \   profile2
-    \   profile3
     editprofiles
     writeconf
     loadconf
     reboot
     bootnow
     update
-\   debug
     exam
     # 0
 

@@ -244,34 +244,7 @@ kinit todos:
 
 
 
-****************************
-Static Disk Directory
-****************************
 
-index    filename			notes
-0	 bpb.img			boot parameter block	
-1	 setup.fi 			bpb setup menus
-2	 images/decb.rom 		base disk extended color basic
-3	 images/hdbchs.dif     		driver specific hdb overlays + patch
-	 images/hdbdw3bc3.dif  		
-	 images/hdbdw3cc3.dif		
-	 images/hdbdw4cc3.dif		
-	 images/hdbtc3.dif		
-	 images/hdbd4n1.dif		
-	 images/hdbdw3bck.dif		
-	 images/hdbdw3jc2.dif		
-	 images/hdbkenton.dif		
-	 images/hdbdhdii.dif		
-	 images/hdbdw3cc1.dif		
-	 images/hdbdw3jc3.dif		
-	 images/hdblba.dif		
-	 images/hdbdw3arduino.dif	
-	 images/hdbdw3cc2.dif		
-	 images/hdbdw4cc2.dif		
-	 images/hdblrtech.dif		
-14	 hdbutil.fi			Rom examination 
-15	 os9.fi				new os9 boot loader
-\ 16	 boot_ide.mod			start of os9 boot drivers
 
 
 
@@ -284,8 +257,8 @@ Memory Map:
 2600 3800  chain boot area
 3800 4500  CCB ASM
 4500 8000  LEGS Memory:
-  4500 5500  CCB CORE       0000 1000
-  5500 7f00  overlay area   1000 3a00
+  4500 5900  CCB CORE       0000 1400
+  5900 7f00  overlay area   1400 3a00
   7f00 8000  forth stacks   3a00 3b00
 8000 a000  ext basic
 a000 c000  basic

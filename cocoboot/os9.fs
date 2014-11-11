@@ -36,25 +36,6 @@ include hdb.fs
 : 9sz ( 9a -- u ) \ returns the size of a os9 formatted string
    0 swap begin c@+ 80 and 0= while swap 1+ swap repeat drop 1+ ;
 
-\ * old os9 module based sector reads
-
-\ : moddata ( -- a ) \ pointer to module's data
-\   dovar # 0
-
-\ : daddr ( -- a ) \ sector data address variable
-\   moddata @ modoff + ;
-
-\ : meminit ( -- ) \ initialize forth memory
-\   1002 @ cp !                   \ set cp to overlay's cp
-\   100 alloc moddata !           \ allocate modules instance data 
-\ ;
-\ : init ( -- f ) \ init module
-\   moddata @ >p modinit ;
-\
-\ : read ( l h -- ) \ read a sector
-\   moddata @ >p modread ;
-
-
 \ 
 \ When in HDB, its easiest to dynamically change
 \ "The Offset" to get full LSN access, rather
@@ -318,7 +299,7 @@ c	4	inode number
    then
 ;
 
-: gimme ( pa -- ) \ applies gimme setting to primitive address
+: gimme ( pa -- ) \ applies gimme settings to primitive address
     p>
     6c00 !+
     0000 !+

@@ -90,8 +90,14 @@ include out.fs
 : pos@ ( -- ) \ restore object begining screen position
    pos @ 88 pw! ;
 
+: oclsline ( -- ) \ clear line
+    pos @ 1+ p> 1f for 60 c!+ next drop ;
+: ocr ( -- ) \ increment the current position
+    cr 88 pw@ 1+ 88 pw!
+;
+
 : redraw ( -- ) \ redraw method
-    pos@ clsline pos@
+    pos@ ( clsobj ) oclsline pos@
     self draw
 ;
 
@@ -119,7 +125,7 @@ include out.fs
 : max ( -- u ) \ number of list items
    union @ ;
 : list_select ( -- ) \ select method for list select
-    data @ 1+ dup max = if drop 0 then data !
+    data @ 1+ dup max = if drop false then data !
     redraw false
 ;
 
@@ -137,15 +143,11 @@ include out.fs
 : llist_draw ( -- ) \ method for llist draw
     list_draw ;
 
-: itemdraw ( u -- ) \ draw item
-    \ calc address of draw
-;
-
 : draw_pos ( c -- ) \ draw position
     440 data @ shl shl shl shl + p! ;
 : llist_select ( -- f ) \ method for llist selection
     cls
-    label type cr cr
+    label type cr ocr
     \ draw each item
     441 dup 88 pw! union @+ for 
        dup type swap 10 + dup 88 pw! swap @+ + 
@@ -173,7 +175,7 @@ include out.fs
 ;
 
 : bentry_select ( -- ) \ draw method
-   pos@ clsline pos@ label type
+   pos@ oclsline pos@ label type
    temp dup 2 naccept >num data c!
    redraw false
 ;
@@ -188,7 +190,7 @@ include out.fs
 ;
 
 : wentry_select ( -- ) \ draw method
-   pos@ clsline pos@ label type
+   pos@ oclsline pos@ label type
    temp dup 4 naccept >num data !
    redraw false
 ;
@@ -204,7 +206,7 @@ include out.fs
 ;
 
 : lentry_select ( -- ) \ draw method
-   pos@ clsline pos@ label type
+   pos@ oclsline pos@ label type
    temp dup 6 naccept >lnum data 3!
    redraw false
 ;
@@ -216,25 +218,86 @@ include out.fs
 \  zero terminated array of object pointers
 
 : ll_draw ( -- ) \ low-level draw
-   cls label uctype cr cr
-   union begin dup @ while @+ draw cr repeat drop
+   cls label uctype cr ocr
+    union begin dup @ while @+ draw ocr repeat drop
+;
+
+
+: curPos ( -- a ) \ cursor position var
+    dovar # 440
+: curInd ( -- a ) \ cursor index var
+    dovar # 0
+: curMax ( -- a ) \ cursor max index
+    dovar # a
+;
+
+: curDraw ( -- ) \ draw the cursor
+    2a curPos @ p!
+;
+
+: curInit ( max -- ) \ (re)initalize cursor
+    dup shr 440 over for 20 + next ( max mid screenpos )
+    curPos !
+    curInd !
+    curMax !
+;
+
+    
+: curUp ( -- ) \ move cursor up
+    \ don't move cursor if at pos zero
+    curInd @ 0= if exit then
+    \ erase cursor
+    60 curPos @ p!
+    \ decrement cursor index
+    -1 curInd +!
+    -20 curPos +!
+    \ place new cursor
+    curDraw
+;
+
+: curDown ( -- ) \ move cursor down
+    \ don't move cursor down if on last line
+    curInd @ 1+ curMax @ < 0= if exit then
+    \ erase cursor
+    60 curPos @ p!
+    \ increment the cursor index
+    1 curInd +!
+    20 curPos +!
+    \ place new cursor
+    2A curPos @ p!
+;
+
+
+: menu_curInit ( -- )  \ initialize the cursor
+    union dup begin @+ 0= until swap - shr 1- curInit
+;
+
+: curApply ( -- ) \ Apply the cursor pos (select an object )
+    union curInd @ shl + @ select if ll_draw menu_curInit then
+;
+
+: menu_lldraw ( --- ) \ low-level menu draw
+    ll_draw menu_curInit curDraw
 ;
 
 : menu_select ( -- ) \ select method
-   data
-   ll_draw
+    data
+    menu_lldraw
    begin
      hide
      key 
-       dup 3 = if drop true exit then
+       dup 3 = if 2drop true exit then
+       dup 5e = if curUp then
+       dup 0a = if curDown then
+       dup 0d = if curApply then
      push union begin 
          dup @ 
      while 
-        @+ dup getascii r@ = if select if ll_draw then else drop then 
+        @+ dup getascii r@ = if select if menu_lldraw then else drop then 
      repeat 
         pull 2drop
    again
-;	 
+;
 
 
 : menu_draw ( -- ) \ menu draw method
@@ -253,7 +316,7 @@ include out.fs
 ;
 
 : text_select ( -- f ) \ text select method
-    pos@ clsline pos@ 
+    pos@ oclsline pos@ 
     label type
     0 11a p!
     data union @ accept

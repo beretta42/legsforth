@@ -35,8 +35,15 @@ include dskcon.fs
 include rofs.fs
 include ticker.fs
 
+
+: splash dovar
+    \ Splash image data curtesy of Simon's SG editor!
+	# 80b6 # 86a6 # 030f # 030f # 020f # 0f14 # 8000
+
 : hello
-    slit str "COCOBOOT2" type cr ;
+    400 p> 100 for 8080 !+ repeat drop 
+    splash >p 48a d mv
+;
 
 : ?panic ( u -- ) \ issue error and panic
    dup if wemit slit str " PANIC!" type else drop then ;
@@ -77,19 +84,21 @@ include ticker.fs
     lit int 2 ! ion \ install timer interrupt
     begin bkey? if -1 exit then ticks @ 0< until ioff 0 ;
 
+: clsstatus ( -- ) \ clear status line
+    5e0 p> 10 for 8080 !+ next drop 5e0 88 pw!
+;
+
 \ waits timeout secs for keystroke 
 \ returns true if button was presses, false if not
-: wait ( u -- f ) 
-    cr
-    slit str "PRESS ANY KEY FOR MENU" type cr
+: wait ( u -- f )
+    5e0 88 pw!
     slit str "AUTOBOOT IN: " type 
     for
       r@ 1+ bemit
-      waitsec if pull drop -1 exit then
+      waitsec if pull drop clsstatus -1 exit then
       8 8 emit emit
-    next cr 0
+    next clsstatus  0
 ;
-
 
 
 : init_screen ( -- ) \ initializes the screen
@@ -359,7 +368,7 @@ struct profileZ        \ size of this structure
 
 : menu ( -- )
     begin
-    cr
+    4a0 88 pw!
     profs
     slit str "0 - " type dup type cr
     profileZ +
@@ -379,7 +388,7 @@ struct profileZ        \ size of this structure
     drop
     slit str "S - SETUP" type cr
     slit str "X - DEFAULT" type cr
-
+    hide
     key
     dup 53 = if drop jmp setup else
     dup 30 = if drop 0 boot else

@@ -27,6 +27,12 @@
 
 include menu.fs
 
+: clit ( -- c ) \ a charactor size literal
+    r@ c@
+    pull 1+ push
+;
+
+
 \ **************************
 \ Objects
 \ **************************
@@ -411,7 +417,50 @@ include menu.fs
     # 0
 
 
-: profile_select
+: delprof
+    self @ profs + profileZ for 0 c!+ next drop
+;
+
+: delete_select
+    5a0 88 pw!
+    slit str "REALLY DELETE? " type key 59 = if
+	delprof
+    else
+	drop
+    then
+    true
+;
+
+
+ 
+: cpprof_select
+    5a0 88 pw!
+    self @ profs + >p     \ source - selected profile
+\    curInd @
+    slit str "DST: " type dup dup sp@ dup 2 naccept >num nip nip cr 
+    \ check for valid profile number here
+    dup 7 > if 
+	5e0 88 pw!
+	slit str "INV DEST, ANYKEY" type
+	key drop 2drop true exit
+    then
+    prof2a >p
+    slit str "REALLY? (y)" type key 59 = if ( s d )
+	profileZ mv
+    else
+	2drop
+    then
+    true \ redraw parent menu
+;
+
+
+: move_select
+    cpprof_select drop
+    delprof
+;
+
+    
+: edit_select
     self @ profs + modprof !
     getmeth @ shl bmeth_table + @ select 
 ;    
@@ -424,6 +473,22 @@ include menu.fs
     self @ profs + modprof ! 
     getprof type 
 ;
+
+
+: profile_select
+    5e0 88 pw!
+    slit str "eDIT,cOPY,dELETE,mOVE?" type
+    key
+    dup clit #' E = if drop edit_select else
+    dup clit #' C = if drop cpprof_select else
+    dup clit #' D = if drop delete_select else
+    dup clit #' M = if drop move_select else 
+    then then then then
+    drop
+    true
+;
+
+
 
 
 \ profile object
@@ -529,31 +594,6 @@ include menu.fs
     #' E
     str "DeBUG INFO"
 
-: cpprof_select
-    5a0 88 pw! 
-    slit str "SRC: " type dup dup sp@ dup 2 naccept >num nip nip space
-    slit str "DST: " type dup dup sp@ dup 2 naccept >num nip nip cr
-    slit str "REALLY COPY? (y)" type key 59 = if ( s d )
-	\ change dest into primitive address
-	prof2a >p
-	swap
-	prof2a >p
-	swap
-	profileZ mv
-    then
-    true \ redraw parent menu
-;
-
-: delete_select
-    5a0 88 pw!
-    slit str "DELETE NO: " type dup dup sp@ dup 2 naccept >num nip nip cr
-    slit str "REALLY DELETE? " type key 59 = if
-	prof2a profileZ for 0 c!+ next drop
-    then
-    true
-;
-
-
 
 : delprof
     noop
@@ -588,8 +628,8 @@ include menu.fs
     profile5
     profile6
     profile7
-    cpprof
-    delprof
+\    cpprof
+\    delprof
     # 0
 
 \ Main menu object

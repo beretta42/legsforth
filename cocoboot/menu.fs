@@ -272,21 +272,23 @@ include out.fs
     union dup begin @+ 0= until swap - shr 1- curInit
 ;
 
-: curApply ( -- ) \ Apply the cursor pos (select an object )
-    union curInd @ shl + @ select if ll_draw menu_curInit then
-;
-
 : menu_lldraw ( --- ) \ low-level menu draw
     ll_draw menu_curInit curDraw
 ;
 
+
+: curApply ( -- ) \ Apply the cursor pos (select an object )
+    union curInd @ shl + @ select if menu_lldraw then
+;
+
+
 : menu_select ( -- ) \ select method
-    data
+\    data
     menu_lldraw
    begin
      hide
      key 
-       dup 3 = if 2drop true exit then
+       dup 3 = if  drop true exit then
        dup 5e = if curUp then
        dup 0a = if curDown then
        dup 0d = if curApply then
@@ -298,6 +300,7 @@ include out.fs
         pull 2drop
    again
 ;
+
 
 
 : menu_draw ( -- ) \ menu draw method

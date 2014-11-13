@@ -50,23 +50,23 @@ include menu.fs
    str "COCO2"
    str "COCO3"
 
+: defprofile_select
+    bentry_select
+    defpro @ 7 > if
+	0 defpro ! drop true	
+    then
+;
+: defpro1+
+    defpro 1+
+;
 \ default profile object
 : defprofile
-   defpro
-   list_select
-   list_draw
+   defpro1+
+   defprofile_select
+   bentry_draw
    # 0 
    #' D
    str "dEFAULT PROFILE: "
-   # 8
-   str "0"
-   str "1"
-   str "2"
-   str "3"
-   str "4"
-   str "5"
-   str "6"
-   str "7"
 
 
 : save_bpb ( -- ) \ save bpb to disk
@@ -113,14 +113,6 @@ include menu.fs
     str "rEBOOT"
 
     
-: bootnow
-    noop
-    menu
-    confirm_draw
-    # 0
-    #' B
-    str "bOOT NOW"
-
 : modprof ( -- a ) \ data address of selected profile
     dovar # 0
 : getprof ( -- a ) \ get data address of tag for profile
@@ -213,6 +205,7 @@ include menu.fs
     # 0
     # 0
     # 0
+    # 0
 
 : bmeth_select
     list_select drop 
@@ -227,7 +220,8 @@ include menu.fs
     # 0
     #' M
     str "mETHOD: "
-    # 4
+    # 5
+    str "VOID"
     str "DOS COMMAND"
     str "HDB LOADER"
     str "EXTERNAL ROM"
@@ -337,6 +331,17 @@ include menu.fs
     # 0
     #' K
     str "DEBLOCk HD: "
+
+
+: void
+    noop
+    menu_select
+    menu_draw
+    # 0
+    #' 0
+    str "MODIFY PROFILE"
+    bmeth
+    # 0
     
 : rom
     noop
@@ -453,6 +458,11 @@ include menu.fs
     true \ redraw parent menu
 ;
 
+: boot_select
+    0 self @ begin dup while profileZ - swap 1+ swap repeat drop
+    boot
+;
+
 
 : move_select
     cpprof_select drop
@@ -477,13 +487,14 @@ include menu.fs
 
 : profile_select
     5e0 88 pw!
-    slit str "eDIT,cOPY,dELETE,mOVE?" type
+    slit str "eDIT,cOPY,dELETE,mOVE,bOOT?" type
     key
     dup clit #' E = if drop edit_select else
     dup clit #' C = if drop cpprof_select else
     dup clit #' D = if drop delete_select else
     dup clit #' M = if drop move_select else 
-    then then then then
+    dup clit #' B = if drop boot_select else
+    then then then then then
     drop
     true
 ;
@@ -648,14 +659,14 @@ include menu.fs
     writeconf
     loadconf
     reboot
-    bootnow
     update
     exam
     # 0
 
 : test
     \ fill out table
-    bmeth_table 
+    bmeth_table
+    lit void !+
     lit chain !+
     lit drom !+
     lit rom !+

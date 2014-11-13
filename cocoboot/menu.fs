@@ -153,14 +153,14 @@ include out.fs
        dup type swap 10 + dup 88 pw! swap @+ + 
     next 2drop 
     hide
-    6a draw_pos
+    2a draw_pos
     \ process keystrokes
     begin key 60 draw_pos
       dup 3 = over d = or if drop true exit else
-      dup 8 = data @ 0 > and if data @ 1- data ! else
-      dup 9 = data @ union @ 1- < and if data @ 1+ data !
+      dup 5e = data @ 0 > and if data @ 1- data ! else
+      dup 0a = data @ union @ 1- < and if data @ 1+ data !
       then then then
-      drop 6a draw_pos
+      drop 2a draw_pos
     again
 ;
  
@@ -296,8 +296,8 @@ include out.fs
          dup @ 
      while 
         @+ dup getascii r@ = if select if menu_lldraw then else drop then 
-     repeat 
-        pull 2drop
+     repeat drop
+        pull drop
    again
 ;
 

@@ -135,7 +135,7 @@ include ticker.fs
 \ and the Boot profile structure
 \
 
-16
+16  \ this should be word that gets size of static area
 2    field pro_method  \ which boot method to use
 2    field pro_drive   \ drive no
 2    field pro_slotno  \ which flavor of HDB to use
@@ -203,7 +203,7 @@ struct profileZ        \ size of this structure
     ddfb begin dup pw@ 4155 = if ( pro pa )
 	    \ blank out old string
 	    dup p> 2020 !+ 2020 !+ 2020 !+ 2020 !+ drop
-	    \ copy string
+	    \ copy string new string
 	    push pro_hdbname @+ push >p pull pull swap mv
 	    exit
 	then 1+ again
@@ -341,23 +341,22 @@ struct profileZ        \ size of this structure
 \    a = address of bootprofile
 \    u = boot profile number
 
-: boot ( u -- ) \ boot profile number
+: boot ( u -- f ) \ boot profile number
     prof2a
     slit str "BOOTING " type
     dup type cr
-    dup pro_method @ 
-      dup 0=  if drop r@ dos else
-      dup 1 = if drop bootdrom else
-      dup 2 = if drop bootrom else
-      dup 3 = if drop r@ bootos9 else
-      then then then then
-      4 ?panic
+    dup pro_method @
+      dup 0 = if drop slit str "VOID PROFILE!" type key drop else
+      dup 1 = if drop r@ dos else
+      dup 2 = if drop bootdrom else
+      dup 3 = if drop bootrom else
+      dup 4 = if drop r@ bootos9 else
+      then then then then then
+      true
 ;
 
-
-
-
 : menu ( -- )
+    begin
     cr
     profs
     slit str "0 - " type dup type cr
@@ -375,24 +374,25 @@ struct profileZ        \ size of this structure
     slit str "6 - " type dup type cr
     profileZ +
     slit str "7 - " type dup type cr
-  drop
+    drop
     slit str "S - SETUP" type cr
     slit str "X - DEFAULT" type cr
-  begin
+
     key
     dup 53 = if drop jmp setup else
-    dup 30 = if drop 0 jmp boot else
-    dup 31 = if drop 1 jmp boot else
-    dup 32 = if drop 2 jmp boot else
-    dup 33 = if drop 3 jmp boot else
-    dup 34 = if drop 4 jmp boot else
-    dup 35 = if drop 5 jmp boot else
-    dup 36 = if drop 6 jmp boot else
-    dup 37 = if drop 7 jmp boot else
-    dup 58 = if drop defpro @ jmp boot else		
+    dup 30 = if drop 0 boot else
+    dup 31 = if drop 1 boot else
+    dup 32 = if drop 2 boot else
+    dup 33 = if drop 3 boot else
+    dup 34 = if drop 4 boot else
+    dup 35 = if drop 5 boot else
+    dup 36 = if drop 6 boot else
+    dup 37 = if drop 7 boot else
+    dup 58 = if drop defpro @  boot else
     then then then then then then then then then then
     drop
-  again
+
+    again
 ;
 
 

@@ -52,9 +52,9 @@ include ticker.fs
 
 
 : ticks ( -- a ) \ address of ticks
-    16 ;
+    1b ;
 : bpb ( -- a ) \ boot parameter block data ptr
-    18 ;
+    1d ;
 
 
 
@@ -63,7 +63,7 @@ include ticker.fs
 \ **************************
 
 : int  ( -- )
-    ticks @ 1- ticks ! ;
+    -1 ticks +! ;
 
 : bkey? ( -- f ) \ returns true if any key is down
     0 ff02 p!    \ set all column strobes
@@ -82,8 +82,8 @@ include ticker.fs
 : wait ( u -- f ) 
     cr
     slit str "PRESS ANY KEY FOR MENU" type cr
-    slit str "AUTOBOOT IN: " type
-    for 
+    slit str "AUTOBOOT IN: " type 
+    for
       r@ 1+ bemit
       waitsec if pull drop -1 exit then
       8 8 emit emit
@@ -342,11 +342,12 @@ struct profileZ        \ size of this structure
 \    u = boot profile number
 
 : boot ( u -- f ) \ boot profile number
+    dup push
     prof2a
     slit str "BOOTING " type
     dup type cr
     dup pro_method @
-      dup 0 = if drop slit str "VOID PROFILE!" type key drop else
+      dup 0 = if 2drop slit str "VOID PROFILE!" type key drop else
       dup 1 = if drop r@ dos else
       dup 2 = if drop bootdrom else
       dup 3 = if drop bootrom else
@@ -354,6 +355,7 @@ struct profileZ        \ size of this structure
       then then then then then
       true
 ;
+
 
 : menu ( -- )
     begin
@@ -389,9 +391,8 @@ struct profileZ        \ size of this structure
     dup 36 = if drop 6 boot else
     dup 37 = if drop 7 boot else
     dup 58 = if drop defpro @  boot else
-    then then then then then then then then then then
     drop
-
+    then then then then then then then then then then
     again
 ;
 
@@ -406,7 +407,8 @@ struct profileZ        \ size of this structure
     \ if boot up key is pressed or autoboot disable then goto menu
     ccbnoauto @ or if jmp menu then
     \ wait for autoboot
-    timeout @ wait if jmp menu else defpro @ jmp boot then
+    timeout @ wait if jmp menu else 
+	defpro @ boot drop jmp setup then
 ;
 
 

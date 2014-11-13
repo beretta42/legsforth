@@ -460,7 +460,7 @@ include menu.fs
 
 : boot_select
     0 self @ begin dup while profileZ - swap 1+ swap repeat drop
-    boot
+    boot 
 ;
 
 

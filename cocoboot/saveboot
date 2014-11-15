@@ -1,0 +1,2 @@
+
+dd bs=256 count=2 skip=1 if=boot.dsk of=save.bpb

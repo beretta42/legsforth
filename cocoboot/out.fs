@@ -24,6 +24,10 @@ Basic Output Words
 
 include ccbimp.fs
 
+: cr ( -- ) \ cause a carrage return
+    88 pw@ 20 + 1f com and 88 pw! ;
+
+
 : space ( -- "space" ) \ emit a space
      20 emit ;
 
@@ -39,15 +43,17 @@ include ccbimp.fs
 : wemit ( u -- "word" ) \ fixed-width unsigned cell print
     sp@ dup c@ bemit char+ c@ bemit drop ;
 
+
 : cls ( -- ) \ clear screen
-   a928 exem ;
+    400 p> 100 for 2020 !+ next drop
+    400 88 pw!
+;
 
 : clsline ( -- ) \ clear current line
-   20 for 20 emit next ;
+   20 for 66 emit next ;
 
 : hide ( -- ) \ hides cursor
    600 88 pw! ;
-
 
 done 
 

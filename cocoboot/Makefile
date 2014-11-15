@@ -43,7 +43,7 @@ DIFS= hdbchs.dif     	\
       hdblrtech.dif
 
 
-ALL: boot.dsk Makefile dw2dsk.wav dw2dsk.cas dw3bc3.rom
+ALL: boot.dsk Makefile dw2dsk.wav dw2dsk.cas dw3bc3.rom ccb2.rom ccb2dos.rom
 
 boot.dsk: boot.img bpb.img setup.fi decb.rom $(DIFS) hdbutil.fi os9.fi update.fi
 	tools/rofs/rofs -x "COCOBOOT BOOT DISK" -f boot.dsk -b boot.img \
@@ -106,11 +106,23 @@ boot.img: base.img forth.slz
 ccb2.img: dhead.img forth.slz
 	cat dhead.img forth.slz > ccb2.img
 
+ccb2.rom: boot.rom forth.slz boot.dsk
+	cat boot.rom forth.slz | dd bs=1 count=16384 > ccb2.rom
+	dd if=boot.dsk of=ccb2.rom seek=18 bs=256 count=46 
+
+ccb2dos.rom: boot.rom forth.slz boot.dsk dhead.img
+	cat dhead.img forth.slz > dboot.pat
+	cp dw3bc3.rom ccb2dos.rom
+	dd if=dboot.pat of=ccb2dos.rom bs=1 seek=12 count=4608 conv=notrunc
+
 base.img: cocoboot.def slz.asm run.slz rel.asm
 	$(AS) base.img -r rel.asm -s -lCCB.ls
 
 dhead.img: cocoboot.def slz.asm run.slz drom.asm
 	$(AS) dhead.img -r drom.asm -s -ldrom.ls
+
+boot.rom: cocoboot.def slz.asm run.slz drom.asm
+	$(AS) boot.rom -r rom.asm -s -lrom.ls
 
 run.slz: run.img
 	tools/slz/slz P run.img run.slz
@@ -140,4 +152,4 @@ dw2dsk.fi: *.fs
 	../bfc/bfc -c -o dw2dsk.fi dw2dsk.fs
 
 clean:
-	rm -f CCB.BIN forth.img *~ run.img *.slz *.dsk *.img *.ls *.fi
+	rm -f CCB.BIN forth.img *~ run.img *.slz *.dsk *.img *.ls *.fi ccb2.rom boot.rom

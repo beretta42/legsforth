@@ -59,7 +59,7 @@ include basics.fs
    push dup istr
    begin 
      vkey 
-     dup d = if 2drop pull drop exit then
+     dup d = if 2drop pull drop 20 emit exit then
      dup 8 = if 
         over @ if emit dup bsstr else drop then
      else
@@ -68,6 +68,7 @@ include basics.fs
      then then
    again
 ;
+
 
 : accept ( ca u -- ) \ fills string from keyboard with any charactors
    lit key keyvec ! laccept ;

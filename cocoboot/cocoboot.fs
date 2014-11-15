@@ -38,10 +38,10 @@ include ticker.fs
 
 : splash dovar
     \ Splash image data curtesy of Simon's SG editor!
-	# 80b6 # 86a6 # 030f # 030f # 020f # 0f14 # 8000
+	# 20b6 # 86a6 # 030f # 030f # 020f # 0f14 # 2000
 
 : hello
-    400 p> 100 for 8080 !+ repeat drop 
+    400 p> 100 for 2020 !+ repeat drop 
     splash >p 48a d mv
 ;
 
@@ -85,7 +85,7 @@ include ticker.fs
     begin bkey? if -1 exit then ticks @ 0< until ioff 0 ;
 
 : clsstatus ( -- ) \ clear status line
-    5e0 p> 10 for 8080 !+ next drop 5e0 88 pw!
+    5e0 p> 10 for 2020 !+ next drop 5e0 88 pw!
 ;
 
 \ waits timeout secs for keystroke 
@@ -94,9 +94,8 @@ include ticker.fs
     5e0 88 pw!
     slit str "AUTOBOOT IN: " type 
     for
-      r@ 1+ bemit
+      r@ 1+ 5ee 88 pw! bemit
       waitsec if pull drop clsstatus -1 exit then
-      8 8 emit emit
     next clsstatus  0
 ;
 

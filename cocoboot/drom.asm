@@ -29,6 +29,9 @@
 	lbra	start		;
 	zmb	0x900		; SECB patches stuff so skip a bunch of space
 start	orcc	#0x50		; turn off interrupts
+	lda	0xff22          ; clear pia interrupt
+	lda	#0x34           ; set pia
+	sta	0xff23		;   no firq interrupts
 	lds	#0x8000		; setup return stack
 	;; Uncompress VM and modules to 3800
 	ldx	#SADDR		; x is our destination

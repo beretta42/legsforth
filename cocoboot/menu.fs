@@ -23,12 +23,13 @@
 \ 
 \ ******************************
 
-include in.fs
 include out.fs
+include in.fs
 
 : uctype ( ca -- ) \ emit string in upper case
-   @+ for c@+ dup 61 > if 20 - then emit next drop ;
-
+   \ @+ for c@+ dup 61 > if 20 - then emit next drop ;
+    type
+;
 
 : 3! ( l h a -- ) \ store a 3 bytes quantity
     swap c!+ ! ;
@@ -91,7 +92,7 @@ include out.fs
    pos @ 88 pw! ;
 
 : oclsline ( -- ) \ clear line
-    pos @ 1+ p> 1f for 60 c!+ next drop ;
+    pos @ 1+ p> 1f for 20 c!+ next drop ;
 : ocr ( -- ) \ increment the current position
     cr 88 pw@ 1+ 88 pw!
 ;
@@ -247,7 +248,7 @@ include out.fs
     \ don't move cursor if at pos zero
     curInd @ 0= if exit then
     \ erase cursor
-    60 curPos @ p!
+    20 curPos @ p!
     \ decrement cursor index
     -1 curInd +!
     -20 curPos +!
@@ -259,7 +260,7 @@ include out.fs
     \ don't move cursor down if on last line
     curInd @ 1+ curMax @ < 0= if exit then
     \ erase cursor
-    60 curPos @ p!
+    20 curPos @ p!
     \ increment the cursor index
     1 curInd +!
     20 curPos +!

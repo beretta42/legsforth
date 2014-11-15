@@ -286,11 +286,6 @@ c	4	inode number
 ;
 
 
-\ not smaller     nz = error
-\ equal     z  = ok
-\ bigger       = error
-
-
 : panic ( f -- "err" )
    if 
       cr

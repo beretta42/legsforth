@@ -1,0 +1,1 @@
+dd bs=256 seek=1 conv=notrunc count=2 if=save.bpb of=boot.dsk

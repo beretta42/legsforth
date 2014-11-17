@@ -227,6 +227,16 @@ include menu.fs
     str "EXTERNAL ROM"
     str "OS9"
 
+: basorbin
+    getpflags
+    list_select
+    list_draw
+    # 0
+    #' B
+    str "AUTOBOOT EXT: "
+    # 2
+    str "BASIC"
+    str "BINARY"
 
 \ 
 \ Disk rom loading object
@@ -374,6 +384,7 @@ include menu.fs
     defid
     noauto
     hdbname
+    basorbin
     # 0
 
 : os9

@@ -218,6 +218,24 @@ struct profileZ        \ size of this structure
 ;
 
 
+
+: dpatchdata ( -- a ) \ See aloadbin.asm for this code
+    dovar
+    # 8e00 # 00ce # 02dc # dfa6 # c64d # e7c0 # c622 # e7c0  
+    # 8608 # e680 # e7c0 # 4a26 # f96f # c486 # 4d6e # 9fc1
+    # 3700  
+;
+
+: dbinpatch ( -- ) \ batch HDB to allow for autoloading BIN files
+    \ 400 88 pw!
+    \ find autoexe string address
+    ddfb begin dup pw@ 4155 - while 1+ repeat  push    
+    \ find destination
+    d930 begin dup pw@ r@ - while 1+ repeat 1- dup  \ dup wemit key drop
+    dpatchdata >p swap 21 mv 1+ pull swap pw!   
+;
+
+
 : dexec ( -- ) \ execute drom setup code ( reboots to loaded HDB )
     \ patch HDB to stop from clearing IDNUM
     d93f begin dup pw@ 0900 - while 1+ repeat 08 swap p!
@@ -246,6 +264,8 @@ struct profileZ        \ size of this structure
     dup pro_defid c@ dup dup  d93e p! 151 p! 14f p!
     \ auto booting
     dup pro_noauto @ 0= if
+	\ patch for bin autoboot
+	dup pro_pflags @ if dbinpatch then
 	\ patch up AUTOEXEC boot name 
 	dup pro_hdbname @ if dup patchAuto then
     else

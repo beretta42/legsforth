@@ -308,7 +308,9 @@ a@	ldy     0x88
 	stb	,y+
 	sty	0x88
 	jmp 	next		
-bs@	ldy	0x88
+bs@	ldb	#0x20
+	stb	[0x88]
+	ldy	0x88
 	leay	-1,y
 	sty	0x88
 	jmp	next

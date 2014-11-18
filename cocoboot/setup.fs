@@ -233,7 +233,7 @@ include menu.fs
     list_draw
     # 0
     #' B
-    str "AUTOBOOT EXT: "
+    str "AUTObOOT EXT: "
     # 2
     str "BASIC"
     str "BINARY"

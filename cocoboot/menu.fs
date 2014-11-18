@@ -156,7 +156,7 @@ include in.fs
     hide
     2a draw_pos
     \ process keystrokes
-    begin key 60 draw_pos
+    begin key 20 draw_pos
       dup 3 = over d = or if drop true exit else
       dup 5e = data @ 0 > and if data @ 1- data ! else
       dup 0a = data @ union @ 1- < and if data @ 1+ data !

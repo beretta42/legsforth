@@ -605,6 +605,16 @@ include menu.fs
     #' U
     str "uPDATE"
 
+: lhack
+    17 dofile ;
+: hack
+    lhack
+    button_select
+    confirm_draw
+    # 0
+    #' H
+    str "hACK (FORTH)"
+
     
 \ prints some debug info
 : dvec
@@ -671,7 +681,8 @@ include menu.fs
     writeconf
     loadconf
     reboot
-    update
+    hack
+\    update
     # 0
 
 : test

@@ -784,6 +784,7 @@ void interp_state(){
   if( !strcmp( wordb, "exposeall")){ exposeall(); return; }
   if( !strcmp( wordb, "p:" )){ mkp(); return; }
   if( !strcmp( wordb, "nodict")){ nodict=1; return; }
+  if( !strcmp( wordb, "dict")){ nodict=0; return; }
   if( !strcmp( wordb, "setorg" )){ setorg(); return; }
   if( !strcmp( wordb, "done" )){ done(); return; }
   if( !strcmp( wordb, "include" )){ include(); return; }

@@ -16,44 +16,37 @@
 \ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 \ ------------------------------------------------------------------------
 
+
 (
-***************************************
-Basic Output Words
-***************************************
+
+This is a proglet that creates a mini-forth interpreter at boot
+
 )
 
-include ccbimp.fs
+1400 setorg
 
-: cr ( -- ) \ cause a carrage return
-    \ 88 pw@ 20 + 1f com and 88 pw! ;
-    d emit ;
+dict
 
+include ../include/basics.fs
+include ../include/forth.fs
 
-: space ( -- "space" ) \ emit a space
-     20 emit ;
-
-: bl? ( c -- f )  \ is c whitespace ?
-     21 - 0< ;
-
-: utoc ( u -- c ) \ converts digit to ascii
-  dup a - 0< if 30 else 37 then + ;
-
-: bemit ( c -- "char" ) \ fixed-width unsigned hex char print
-    dup shr shr shr shr utoc emit f and utoc emit ;
-
-: wemit ( u -- "word" ) \ fixed-width unsigned cell print
-    sp@ dup c@ bemit char+ c@ bemit drop ;
-
-: cls ( -- ) \ clear screen
-    400 p> 110 for 2020 !+ next drop
-    400 88 pw!
+: bye
+    ff 11a p!
+    1 dofile
 ;
 
-: clsline ( -- ) \ clear current line
-   20 for 66 emit next ;
+: wnf'
+    3f emit type cr ;
 
-: hide ( -- ) \ hides cursor
-   600 88 pw! ;
+: words
+    latest begin dup while dup >name type space @ repeat drop cr ;  
 
-done 
-
+: main ( -- ) \ The Main Word
+    1402 @ cp !     \ set CP to overlay's CP
+    1404 @ dh !     \ set dictionary head
+    cls
+    slit str "Go Forth!" type cr
+    0 11a p!
+    lit wnf' lit wnf !
+    jmp quit
+;

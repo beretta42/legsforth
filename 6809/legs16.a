@@ -296,24 +296,47 @@ key
 
 emit
  	pulu 	d
+	cmpb	#0xd
+	beq	cr@             ; Test and do carriage return
 	cmpb	#0x8
-	beq	bs@
-	cmpb 	#0x40
+	beq	bs@             ; test and do backspace
+	cmpb 	#0x40           ; convert to screen data
 	bcs	a@
 	subb 	#0x40	
 	cmpb	#0x20
 	bcs     a@
 	addb	#0x20
-a@	ldy     0x88
+a@	ldy     0x88            ; put char on screen
 	stb	,y+
 	sty	0x88
-	jmp 	next		
+	bra	sc@
 bs@	ldb	#0x20
 	stb	[0x88]
 	ldy	0x88
 	leay	-1,y
 	sty	0x88
-	jmp	next
+	bra	sc@
+cr@	lda	#0x20		; replace cursor
+	sta	[0x88]
+	ldd	0x88		; get screen position
+	addd	#0x20           ; and 32 for next line
+	andb	#0xe0           ; lob off low bits for beginning of line
+	std	0x88		; save screen position
+sc@	ldd	0x88		; is screen pos past screen?
+	cmpd	#0x600			
+	bcs	ret             ; no just return
+	pshs	x,u
+	ldx	#0x400          ; scroll memory
+	ldu	#0x420
+loop@	ldd	,u++
+	std	,x++
+	cmpx	#0x600
+	bne	loop@
+	ldd	#0x5e0
+	std	0x88
+	puls	x,u
+ret	jmp	next
+
 
 	
 bye

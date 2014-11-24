@@ -250,7 +250,7 @@ include menu.fs
     # 0
     #' R
     str "DISK rOM IMAGE: "
-    # 11
+    # 12
     str "CHS"
     str "DW3BC3"
     str "DW3CC3"
@@ -268,6 +268,7 @@ include menu.fs
     str "DW3CC2"
     str "DW4CC2"
     str "LRTECH"
+    str "SDC"
 
 : bankno
     getside
@@ -671,7 +672,6 @@ include menu.fs
     loadconf
     reboot
     update
-    exam
     # 0
 
 : test

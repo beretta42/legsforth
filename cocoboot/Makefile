@@ -40,7 +40,8 @@ DIFS= hdbchs.dif     	\
       hdbdw3arduino.dif	\
       hdbdw3cc2.dif	\
       hdbdw4cc2.dif	\
-      hdblrtech.dif
+      hdblrtech.dif     \
+      hdbsdc.dif
 
 
 ALL: boot.dsk Makefile dw2dsk.wav dw2dsk.cas dw3bc3.rom ccb2.rom ccb2dos.rom
@@ -67,7 +68,7 @@ images/hdbdw3arduino.dif	\
 images/hdbdw3cc2.dif		\
 images/hdbdw4cc2.dif		\
 images/hdblrtech.dif		\
-hdbutil.fi			\
+images/hdbsdc.dif               \
 os9.fi				\
 update.fi                       \
 

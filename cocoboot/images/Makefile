@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ------------------------------------------------------------------------
 
-HDBDIR = /home/beretta/C/toolshed/hdbdos/
+HDBDIR = /home/beretta/C/toolshed-code/hdbdos/
 VPATH = $(HDBDIR)
 
 ROMS= hdbchs.rom     	\
@@ -35,7 +35,8 @@ ROMS= hdbchs.rom     	\
       hdbdw3arduino.rom	\
       hdbdw3cc2.rom	\
       hdbdw4cc2.rom	\
-      hdblrtech.rom	
+      hdblrtech.rom	\
+      hdbsdc.rom
 
 DIFS= hdbchs.dif     	\
       hdbdw3bc3.dif  	\
@@ -53,7 +54,8 @@ DIFS= hdbchs.dif     	\
       hdbdw3arduino.dif	\
       hdbdw3cc2.dif	\
       hdbdw4cc2.dif	\
-      hdblrtech.dif	
+      hdblrtech.dif	\
+      hdbsdc.dif        \
 
 
 ALL: decb.rom $(OVRS) $(DIFS)
@@ -68,6 +70,7 @@ decb.rom: $(ROMS)
 # loadable images for each flavor of HDBDOS
 %.dif: %.rom
 	../tools/idiff/idiff $(HDBDIR)hdbchs.rom $< $@
+
 
 clean:
 	rm -f *.rom *.dif

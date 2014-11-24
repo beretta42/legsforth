@@ -203,12 +203,12 @@ struct profileZ        \ size of this structure
 \ to (hopefully) make the file unfindable to HDB
 
 : defauto ( -- ) \ defeat autoboot
-   ddfb begin dup pw@ 4155 = if 2121 swap pw! exit then 1+ again
+   ddd0 begin dup pw@ 4155 = if 2121 swap pw! exit then 1+ again
 ;
 
 : patchAuto ( profile -- ) \ patch in autoexec filename in to hdb
     \ find start of "AUTOEXEC" in HDB image
-    ddfb begin dup pw@ 4155 = if ( pro pa )
+    ddd0 begin dup pw@ 4155 = if ( pro pa )
 	    \ blank out old string
 	    dup p> 2020 !+ 2020 !+ 2020 !+ 2020 !+ drop
 	    \ copy string new string

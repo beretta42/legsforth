@@ -27,9 +27,10 @@
 
 
 nodict		      \ no dictionary to be compiled to target
+hideall
 
 include ccbimp.fs
-include out.fs
+include out.fs hideall
 \ include debug.fs   \ commented out for size :(
 include dskcon.fs
 include rofs.fs
@@ -48,20 +49,11 @@ include ticker.fs
 : ?panic ( u -- ) \ issue error and panic
    dup if wemit slit str " PANIC!" type else drop then ;
 
-: width40 ( -- ) \ change to 40 column mode
-   f65c exem ;
-
-: width80 ( -- ) \ change to 80 column mode
-   f679 exem ;
-
-: width32 ( -- ) \ change to 32 column mode
-   f652 exem ;
-
 
 : ticks ( -- a ) \ address of ticks
-    1b ;
+    1b ; expose
 : bpb ( -- a ) \ boot parameter block data ptr
-    1d ;
+    1d ; expose
 
 
 
@@ -75,7 +67,7 @@ include ticker.fs
 : bkey? ( -- f ) \ returns true if any key is down
     0 ff02 p!    \ set all column strobes
     ff00 p@      \ read the rows
-    ff = 0= ;    
+    ff = 0= ;  expose  
 
 \ waits one sec for keystroke
 \ returns true if button was presses, false if not
@@ -118,6 +110,8 @@ include ticker.fs
     load_bpb
 ;
 
+exposeall
+
 : timeout ( -- a ) \ timeout
     bpb @ ;
 
@@ -157,6 +151,9 @@ include ticker.fs
 a    field pro_hdbname \ HDB autoexec file name
 struct profileZ        \ size of this structure
 
+hideall
+
+    
 \ end of bpb structure **************************
     
 : prof2a ( u -- a ) \ get data address for profile struct u
@@ -273,7 +270,7 @@ struct profileZ        \ size of this structure
 	defauto
     then
     drop ioff
-;
+; expose
 
 
 
@@ -331,7 +328,7 @@ struct profileZ        \ size of this structure
 
 : cold ( -- ) \ cold reboot coco
     0 mpi
-    0 71 p! fffe pw@ exem ;
+    0 71 p! fffe pw@ exem ; expose
 
 : bootrom ( profile -- ) \ boot rom
     \ set MPI switch
@@ -424,8 +421,7 @@ struct profileZ        \ size of this structure
     again
 ;
 
-
-: main
+: init
     lit dpTick sectvec !
     bkey? init_screen hello       \ detect key down and init screen
     c006 pw@ p> 1+ c@ drive c!    \ save boot drive no

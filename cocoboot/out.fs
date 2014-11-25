@@ -24,22 +24,23 @@ Basic Output Words
 
 include ccbimp.fs
 
+exposeall
+
 : cr ( -- ) \ cause a carrage return
     \ 88 pw@ 20 + 1f com and 88 pw! ;
-    d emit ;
-
+    d emit ; 
 
 : space ( -- "space" ) \ emit a space
-     20 emit ;
+     20 emit ; 
 
 : bl? ( c -- f )  \ is c whitespace ?
-     21 - 0< ;
+     21 - 0< ; 
 
 : utoc ( u -- c ) \ converts digit to ascii
   dup a - 0< if 30 else 37 then + ;
 
 : bemit ( c -- "char" ) \ fixed-width unsigned hex char print
-    dup shr shr shr shr utoc emit f and utoc emit ;
+    dup shr shr shr shr utoc emit f and utoc emit ; 
 
 : wemit ( u -- "word" ) \ fixed-width unsigned cell print
     sp@ dup c@ bemit char+ c@ bemit drop ;

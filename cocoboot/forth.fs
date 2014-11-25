@@ -26,9 +26,12 @@ This is a proglet that creates a mini-forth interpreter at boot
 1400 setorg
 
 dict
+exposeall
 
 include ../include/basics.fs
 include ../include/forth.fs
+include forth2.fs
+include debug.fs
 
 : bye
     ff 11a p!
@@ -40,6 +43,8 @@ include ../include/forth.fs
 
 : words
     latest begin dup while dup >name type space @ repeat drop cr ;  
+: wds
+    latest 20 for dup >name type space @ repeat drop cr ;
 
 : main ( -- ) \ The Main Word
     1402 @ cp !     \ set CP to overlay's CP

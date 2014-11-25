@@ -49,6 +49,8 @@ include debug.fs
 : main ( -- ) \ The Main Word
     1402 @ cp !     \ set CP to overlay's CP
     1404 @ dh !     \ set dictionary head
+    memz r0 !
+    memz 80 - s0 !
     cls
     slit str "Go Forth!" type cr
     0 11a p!

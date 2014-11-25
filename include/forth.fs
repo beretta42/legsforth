@@ -139,10 +139,12 @@ offset	size	what
             then 
         then 
     again
-     
+
+: r0 dovar # 4000 ;
+: s0 dovar # 3f00 ;
 
 : quit'
-  begin 4000 rp! interpret again
+  begin r0 @ rp! interpret again
  
 : quit 
   quit' ;

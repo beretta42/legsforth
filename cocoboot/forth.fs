@@ -39,7 +39,7 @@ include debug.fs
 ;
 
 : wnf'
-    3f emit type cr ;
+    cr 3f emit type cr ;
 
 : words
     latest begin dup while dup >name type space @ repeat drop cr ;  
@@ -49,6 +49,7 @@ include debug.fs
 : main ( -- ) \ The Main Word
     1402 @ cp !     \ set CP to overlay's CP
     1404 @ dh !     \ set dictionary head
+    lit header' lit header !
     memz r0 !
     memz 80 - s0 !
     cls

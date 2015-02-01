@@ -134,7 +134,7 @@ include		dw.fs
        
 
 : start
-    0 ffd9 p!     \ set high speed ( for coco3)
+\    0 ffd9 p!     \ set high speed ( for coco3)
     here daddr !  \ set sector buffer
     begin lit main select drop again ;
 

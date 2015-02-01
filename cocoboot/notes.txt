@@ -295,6 +295,7 @@ TODO
 * test against RGB dos
 * update code for BFC structures.
 * add shut-off DW's HDB translation
+* why does Nitros9 fart out with os9boot's bigger than $7000?
 
 
 *************************

@@ -311,6 +311,9 @@ c	4	inode number
 : main ( a u -- )  \ profile addr and index pass in from chain loader
     \ initialize memory
     meminit
+    \ reset stacks down to out of the way
+    3800 p> rp! push push
+    3700 p> sp! pull pull
     \ load up the HDB context
     drop dup HDBSwitch cr          ( a )
     \ check for deblock and set local flag
@@ -352,7 +355,7 @@ c	4	inode number
 	 slit str "BOOTFILE NOT FOUND" type cr true panic then
      falloc dup push fopen r@ fsize
      if slit str "BOOTFILE WAY TOO BIG" type cr true panic then
-     dup 7000 swap u< if slit str "BOOTFILE TOO BIG" type cr true panic then
+     dup 8000 swap u< if slit str "BOOTFILE TOO BIG" type cr true panic then
      3000 u< if slit str "BOOTFILE TOO SMALL" type cr true panic then
      pull drop
 
@@ -405,7 +408,7 @@ c	4	inode number
     0 p> 100 for 0 c!+ next drop
     \ make screen pointer
     8 6002 pw!
-    \ clear screen
+    \ clear screen - can't do this is our code!
     \ 6004 p> 1e0 for 2020 !+ next drop
     \ setup gimme & DP mirror
     ff90 gimme

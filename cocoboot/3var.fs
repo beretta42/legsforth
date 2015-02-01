@@ -30,7 +30,7 @@ rbf filesystem
    c@+ swap @ swap ;
 
 : 3! ( d a -- ) \ stores a double as a 3var
-   swap c!+ ! ;
+    swap c!+ ! ;
 
 : 3@+ ( a -- a d ) \ fetch a 3var and increments address
    dup 3 + swap 3@ ;

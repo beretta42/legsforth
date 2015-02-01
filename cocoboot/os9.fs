@@ -45,7 +45,11 @@ include hdb.fs
 : deblockf ( -- a ) \ deblock flag
     dovar # 0
 
+: offset ( -- a ) \ 3 byte offset
+    dovar # 0 # 0
+
 : 9readr ( l h -- ) \ read a sector without deblocking
+    offset 2@ 2+   
     HDBOFF p> 3!
     0 lsn !
     read drop ;
@@ -316,8 +320,9 @@ c	4	inode number
     3700 p> sp! pull pull
     \ load up the HDB context
     drop dup HDBSwitch cr          ( a )
-    \ check for deblock and set local flag
+    \ check for deblock and set local flag & set local var for offset
     dup pro_noauto @ deblockf !
+    dup pro_offset 3@ offset 2!
     \ Now we further patch HDB to make a proper
     \ init routine.
     

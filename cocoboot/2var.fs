@@ -34,7 +34,10 @@ in mem:   highword lowword
 
 : 2inc ( d -- d ) \  increment double by one
    swap 1 adc -rot + ;
-   
+
+: 2+ ( d1 d2 -- d ) \ adds d1 with d2
+   rot + push adc swap pull + ;
+
 
 done 
 

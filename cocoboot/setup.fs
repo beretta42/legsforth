@@ -400,7 +400,7 @@ include menu.fs
     slotno
     mpino
     hwaddr
-\    hdboffset
+    hdboffset
     defid
     driveno
     9noauto

@@ -411,10 +411,6 @@ c	4	inode number
     0 ffa0 p!
     \ clear dp block
     0 p> 100 for 0 c!+ next drop
-    \ make screen pointer
-    8 6002 pw!
-    \ clear screen - can't do this is our code!
-    \ 6004 p> 1e0 for 2020 !+ next drop
     \ setup gimme & DP mirror
     ff90 gimme
     90 gimme

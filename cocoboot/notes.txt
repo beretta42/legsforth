@@ -268,7 +268,14 @@ e000 ff00  super basic
 ***********************
 
 
-
+0000 38 
+2000 39 
+4000 3a 
+6000 3b 
+8000 3c 
+a000 3d 
+c000 3e 
+e000 3f
 
 
 *************************
@@ -400,3 +407,5 @@ calc HDB from DCDRV DCTRK DCSEC
 IDE  uses  DRVSEL
 SCSI uses  DRVSEL
 DW   uses  IDNUM
+
+

@@ -46,7 +46,6 @@ dict	pshs	a		; save counter
 	ldd	,y++		; D=length/offset
 	tsta
 	beq	exit		; is zero, so end of image, quit unpacking
-	pshs	a		; save length for later
 	lsra
 	lsra
 	lsra
@@ -55,7 +54,7 @@ dict	pshs	a		; save counter
 	negb
 	sbca	#0		; D=-offset
 	leau	d,x		; y=dict
-	puls	a		; get back length
+	lda	-2,y		; get back length
 	anda	#15		; mask off extraneous offset bits
 	adda	#2		; add count bias
 cpy	ldb	,u+		; copy byte from dict
@@ -102,3 +101,7 @@ exit	puls	d,pc		; remove temporaries from stack and return
 ;;
 ;; As it stands, this routine assembles to 59 bytes. With the direct page
 ;; trick above, it can assemble to 57 bytes.
+
+;; 7/20/20 - Routine nows assembles to 57 bytes with an optimization that
+;; substitutes a "pshs a" and "puls a" pair with a single "lda -2,y".
+;; This is also 7 clock cyles quicker. Doug Masten

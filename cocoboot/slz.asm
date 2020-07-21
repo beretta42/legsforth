@@ -56,11 +56,11 @@ dict	pshs	a		; save counter
 	leau	d,x		; y=dict
 	lda	-2,y		; get back length
 	anda	#15		; mask off extraneous offset bits
-	adda	#2		; add count bias
+	inca			; add count bias +2
 cpy	ldb	,u+		; copy byte from dict
 	stb	,x+		; to dest
 	deca			; bump counter
-	bne	cpy		; repeat
+	bpl	cpy		; repeat
 	puls	a		; get back tag counter
 	bra	itag		; go back to main loop
 exit	puls	d,pc		; remove temporaries from stack and return
@@ -102,6 +102,7 @@ exit	puls	d,pc		; remove temporaries from stack and return
 ;; As it stands, this routine assembles to 59 bytes. With the direct page
 ;; trick above, it can assemble to 57 bytes.
 
-;; 7/20/20 - Routine nows assembles to 57 bytes with an optimization that
-;; substitutes a "pshs a" and "puls a" pair with a single "lda -2,y".
-;; This is also 7 clock cyles quicker. Doug Masten
+;; 7/20/20 - Routine nows assembles to 56 bytes with two optimizations.
+;;   1) Substitute "pshs a" and "puls a" pair with a single "lda -2,y".
+;;   2) Substitute "adda #2" and "bne cpy" pair with "inca" and "bpl cpy"
+;;   Doug Masten (slz@dougmasten.com)
